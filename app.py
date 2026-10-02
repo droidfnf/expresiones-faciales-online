@@ -19,10 +19,10 @@ app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 app.secret_key = "clave_secreta_super_segura_cambiar_en_produccion"
 
 # ==========================================
-# CONFIGURACIÓN DE SUPABASE
+# CONFIGURACIÓN DE SUPABASE (Corregida la URL)
 # ==========================================
-SUPABASE_URL = "https://xcmfthbsiqaiindwrmik.supabase.co"
-SUPABASE_KEY = "sb_publishable_f8gMCZbHAP8n2VKjHms6cg_uG9JaSbW"
+SUPABASE_URL = "https://xcmfthbsiqaiindwrmik.supabase.co"  
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjbWZ0aGJzaXFhaWluZHdybWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NjY3NDMsImV4cCI6MjEwNjQ0Mjc0M30.Go_ec7L1rW_E1CvPBdJrWX6nxBnfIL5sCogzbLeThoY"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 _detector: FER | None = None
