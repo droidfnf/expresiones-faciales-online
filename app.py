@@ -19,9 +19,9 @@ app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 app.secret_key = "clave_secreta_super_segura_cambiar_en_produccion"
 
 # ==========================================
-# CONFIGURACIÓN DE SUPABASE (Corregida la URL)
+# CONFIGURACIÓN DE SUPABASE
 # ==========================================
-SUPABASE_URL = "https://xcmfthbsiqaiindwrmik.supabase.co"  
+SUPABASE_URL = "https://xcmfthbsiqaiindwrmik.supabase.co"
 SUPABASE_KEY = "sb_publishable_f8gMCZbHAP8n2VKjHms6cg_uG9JaSbW"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
