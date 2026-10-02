@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101716">
+  <meta name="description" content="Explora expresiones faciales con un modelo de aprendizaje automático que funciona en tu navegador.">
+  <title>Mirada — Sistema Python de expresiones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark;--bg:#101716;--panel:#171f1d;--panel2:#1b2522;--line:#283330;--muted:#93a29b;--white:#f1f4ed;--green:#c6f276;--green2:#a8d65b;--mint:#6eaa91;--amber:#edbe75}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 7% 0%,#26302a 0,transparent 34%),var(--bg);color:var(--white);font-family:'DM Sans',sans-serif} button{font:inherit;color:inherit}.shell{max-width:1380px;margin:0 auto;padding:0 42px 48px}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff10}.brand{display:flex;align-items:center;gap:12px;font:800 19px Manrope,sans-serif;letter-spacing:-.7px}.brand-mark{height:35px;width:35px;border-radius:12px;background:var(--green);display:grid;place-items:center;color:#1a2714}.brand-mark svg{width:22px}.brand small{display:block;font:500 9px 'DM Mono',monospace;letter-spacing:1.4px;color:var(--muted);margin-top:3px}.top-meta{display:flex;align-items:center;gap:9px;color:var(--muted);font:11px 'DM Mono',monospace;letter-spacing:.4px}.dot{height:7px;width:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #c6f27670}.intro{padding:45px 0 29px;display:flex;justify-content:space-between;align-items:end}.eyebrow{font:11px 'DM Mono',monospace;letter-spacing:2px;color:var(--green);text-transform:uppercase}.intro h1{font:600 clamp(32px,4vw,47px) Manrope,sans-serif;letter-spacing:-2px;margin:11px 0 9px}.intro p{margin:0;color:var(--muted);font-size:14px}.session-tag{padding:9px 12px;border:1px solid var(--line);border-radius:8px;color:#aab7af;font:10px 'DM Mono',monospace;letter-spacing:.7px;white-space:nowrap}.grid{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(320px,.92fr);gap:18px}.card{background:linear-gradient(145deg,#1a2320,#151d1b);border:1px solid var(--line);border-radius:16px;overflow:hidden}.card-head{height:61px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff0d}.card-title{display:flex;align-items:center;gap:9px;font:600 12px Manrope,sans-serif}.icon{color:var(--green);width:16px;height:16px}.live-pill{display:flex;align-items:center;gap:7px;border:1px solid #ffffff12;border-radius:30px;padding:6px 9px;font:9px 'DM Mono',monospace;color:var(--muted);letter-spacing:.7px}.camera-area{position:relative;min-height:360px;aspect-ratio:16/9;background:#0b100f;overflow:hidden}.camera-area video,.camera-area canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.camera-area canvas{z-index:1}.placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:17px;background:radial-gradient(ellipse at center,#202d283d 0,transparent 65%)}.face-outline{width:120px;height:148px;border:1px solid #c6f2766b;border-radius:48% 48% 46% 46%;position:relative;opacity:.65}.face-outline:before,.face-outline:after{content:'';position:absolute;width:30px;height:9px;border-top:1px solid var(--green);top:59px;left:18px;border-radius:50%}.face-outline:after{left:auto;right:18px}.face-mouth{position:absolute;width:34px;height:10px;border-bottom:1px solid var(--green);border-radius:50%;left:42px;top:97px}.placeholder span{font-size:12px;color:#9eaaa3}.camera-corner{position:absolute;z-index:2;width:23px;height:23px;border-color:#c6f27688;border-style:solid;pointer-events:none}.tl{top:16px;left:16px;border-width:1px 0 0 1px}.tr{top:16px;right:16px;border-width:1px 1px 0 0}.bl{bottom:16px;left:16px;border-width:0 0 1px 1px}.br{bottom:16px;right:16px;border-width:0 1px 1px 0}.camera-foot{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid #ffffff0d}.camera-note{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.camera-note svg{width:15px;color:var(--mint)}.controls{display:flex;gap:8px}.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:11px;font-weight:600;cursor:pointer;transition:transform .15s,background .15s}.btn:hover{transform:translateY(-1px)}.btn-primary{color:#182015;background:var(--green);border-color:var(--green)}.btn-primary:hover{background:#d3fa90}.btn-secondary{background:#222b28}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.btn svg{width:15px;height:15px}.side{display:flex;flex-direction:column;gap:18px}.result{padding:20px 20px 18px}.result-top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font:10px 'DM Mono',monospace;letter-spacing:.7px}.result-display{display:flex;align-items:center;gap:14px;margin:21px 0 17px}.emoji{height:55px;width:55px;border:1px solid #c6f27630;background:#c6f2760b;border-radius:15px;display:grid;place-items:center;font-size:28px}.result-name{font:700 27px Manrope,sans-serif;letter-spacing:-1px}.result-caption{font-size:11px;color:var(--muted);margin-top:3px}.message{background:#c6f2760a;border:1px solid #c6f27621;border-radius:10px;padding:13px 14px;color:#d4dfd3;font-size:12px;line-height:1.55}.message b{color:var(--green);font-weight:600}.confidence{margin-top:17px}.conf-head{display:flex;justify-content:space-between;font:10px 'DM Mono',monospace;color:var(--muted);margin-bottom:8px}.bar{height:4px;background:#ffffff12;border-radius:5px;overflow:hidden}.bar span{display:block;width:0;height:100%;background:var(--green);border-radius:5px;transition:width .35s}.result-quiet{margin:10px 0 0;color:#87958e;font-size:10px;line-height:1.55}.distribution{padding:0 20px 17px}.distribution-head{height:52px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff0c;margin-bottom:8px}.distribution-head strong{font:600 12px Manrope}.distribution-head span{font:9px 'DM Mono',monospace;color:var(--muted)}.emotion-row{display:grid;grid-template-columns:22px 1fr 35px;gap:8px;align-items:center;padding:7px 0;font-size:10px;color:#bbc5bd}.emotion-row .mini{height:3px;background:#ffffff10;border-radius:3px;overflow:hidden}.emotion-row .mini i{display:block;width:0;height:100%;background:#78ae92;transition:width .3s}.emotion-row.active{color:var(--green)}.emotion-row.active .mini i{background:var(--green)}.emotion-row .pct{text-align:right;color:#87958e;font:9px 'DM Mono',monospace}.bottom-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-top:18px}.info-card{display:flex;gap:12px;align-items:flex-start;background:#171f1d;border:1px solid var(--line);border-radius:12px;padding:16px}.info-icon{width:29px;height:29px;flex:0 0 auto;border-radius:8px;background:#c6f27612;color:var(--green);display:grid;place-items:center}.info-icon svg{width:15px;height:15px}.info-card strong{display:block;font:600 11px Manrope;margin:0 0 5px}.info-card p{margin:0;color:var(--muted);font-size:10px;line-height:1.5}.footer{display:flex;justify-content:space-between;align-items:center;margin-top:22px;color:#64726b;font:9px 'DM Mono',monospace;letter-spacing:.4px}.footer a{color:#91a097;text-decoration:none}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#202a26;border:1px solid #36433d;color:#e2e9e1;border-radius:10px;padding:12px 16px;font-size:12px;transition:.2s;z-index:5}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:900px){.shell{padding:0 22px 35px}.grid{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;align-items:start}.result{grid-row:span 2}.camera-area{min-height:300px}.bottom-grid{grid-template-columns:1fr 1fr}.bottom-grid .info-card:first-child{grid-column:span 2}}
+    @media(max-width:600px){.shell{padding:0 14px 25px}.topbar{height:68px}.top-meta{font-size:9px}.intro{padding:31px 0 21px;align-items:start}.intro h1{font-size:34px}.intro p{font-size:12px;max-width:250px;line-height:1.5}.session-tag{display:none}.grid{gap:12px}.camera-area{min-height:235px}.camera-foot{align-items:flex-start;gap:12px;flex-direction:column}.controls{width:100%}.controls .btn{flex:1}.side{display:flex}.result{order:0}.distribution{order:1}.bottom-grid{grid-template-columns:1fr}.bottom-grid .info-card:first-child{grid-column:auto}.footer{gap:10px;align-items:flex-start;flex-direction:column}.result-name{font-size:24px}}
+    
+    .logout-btn {
+      background: #222b28;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 7px 12px;
+      border-radius: 8px;
+      font: 11px 'DM Mono', monospace;
+      text-decoration: none;
+      transition: 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .logout-btn:hover {
+      background: #2b3834;
+      color: var(--white);
+      border-color: #3d4f49;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/><path d="M12 2v1.5M21 12h1.5M12 20.5V22M1.5 12H3"/></svg></div><div>mirada<small>LABORATORIO DE EXPRESIONES</small></div></div>
+      
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="top-meta"><span class="dot"></span><span>IA EN TU NAVEGADOR</span></div>
+        <a href="/api/logout" class="logout-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Cerrar sesión
+        </a>
+      </div>
+    </header>
+    
+    <section class="intro">
+      <div>
+        <div class="eyebrow">Un vistazo al lenguaje facial</div>
+        <h1>¿Qué expresa tu rostro?</h1>
+        <p>Una exploración visual con inteligencia artificial, en tiempo real.</p>
+      </div>
+      <div class="session-tag">SESIÓN PRIVADA · SIN GRABACIÓN</div>
+    </section>
+
+    <section class="grid">
+      <!-- Columna Izquierda: Cámara + Tarjetas informativas + Registros Faciales + Nuevos Paneles -->
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <article class="card">
+          <div class="card-head">
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg>Vista de cámara</div>
+            <div class="live-pill"><span class="dot" id="liveDot" style="background:#66756c;box-shadow:none"></span><span id="liveLabel">EN ESPERA</span></div>
+          </div>
+          <div class="camera-area" id="cameraArea">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="placeholder" id="placeholder">
+              <div class="face-outline"><i class="face-mouth"></i></div>
+              <span>Tu cámara aparecerá aquí</span>
+            </div>
+            <i class="camera-corner tl"></i><i class="camera-corner tr"></i><i class="camera-corner bl"></i><i class="camera-corner br"></i>
+          </div>
+          <div class="camera-foot">
+            <div class="camera-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>El análisis ocurre localmente en este dispositivo</div>
+            <div class="controls">
+              <button class="btn btn-primary" id="startBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 5 12 7-12 7V5Z"/></svg>Iniciar cámara</button>
+              <button class="btn btn-secondary" id="stopBtn" disabled><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Detener</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Las 3 tarjetas informativas -->
+        <div class="bottom-grid" style="margin-top: 0;">
+          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="M9 12h6"/></svg></div><div><strong>Tu privacidad primero</strong><p>La imagen se analiza dentro de tu navegador. No se envía ni se almacena.</p></div></article>
+          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div><strong>Una estimación, no una verdad</strong><p>El modelo clasifica patrones visuales. No puede saber con certeza cómo te sientes.</p></div></article>
+          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h17M7 15l4-4 3 2 6-7"/></svg></div><div><strong>Aprendizaje automático</strong><p>Red neuronal preentrenada para reconocer siete categorías de expresión.</p></div></article>
+        </div>
+
+        <!-- SECCIÓN DE REGISTROS FACIALES (HISTORIAL EN VIVO) -->
+        <article class="card" style="padding: 16px 20px; background: linear-gradient(145deg, #171f1d, #141a18);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <strong style="font: 600 12px Manrope; display: flex; align-items: center; gap: 6px; color: var(--green);">📋 Registros Faciales (Historial)</strong>
+            <button id="clearLogsBtn" style="background: #222b28; border: 1px solid var(--line); color: var(--muted); padding: 3px 8px; border-radius: 4px; font: 9px 'DM Mono', monospace; cursor: pointer;">Limpiar</button>
+          </div>
+          <div id="facialLogsContainer" style="max-height: 140px; overflow-y: auto; font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+            <div style="font-style: italic; opacity: 0.7;">Aún no hay registros en esta sesión. Inicia la cámara...</div>
+          </div>
+        </article>
+
+        <!-- NUEVO PANEL 1: TRANSICIÓN EMOCIONAL (INTERACTIVO) -->
+        <article class="card" style="padding: 16px 20px; background: linear-gradient(145deg, #171f1d, #141a18);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <strong style="font: 600 12px Manrope; display: flex; align-items: center; gap: 6px; color: var(--green);">📈 Transición Emocional</strong>
+            <span style="font: 9px 'DM Mono', monospace; color: var(--mint); background: rgba(110,170,145,0.1); padding: 2px 6px; border-radius: 4px;">EN VIVO</span>
+          </div>
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">
+            Secuencia reciente de cambios detectados. Haz clic para consultar el flujo temporal.
+          </p>
+          <div id="timelineCardTrigger" style="background: rgba(0,0,0,0.25); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-size: 11px; color: var(--white); cursor: pointer; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--line)'">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--muted); font: 9px 'DM Mono', monospace;">
+              <span>FLUJO RECIENTE</span>
+              <span style="color: var(--green);">Ver detalles ➔</span>
+            </div>
+            <div style="margin-top: 6px; font-weight: 600; color: var(--green);" id="timelineCurrentSummary">Esperando flujo de cámara...</div>
+          </div>
+        </article>
+
+        <!-- NUEVO PANEL 2: CALIBRACIÓN Y SENSIBILIDAD -->
+        <article class="card" style="padding: 16px 20px; background: linear-gradient(145deg, #171f1d, #141a18);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+            <strong style="font: 600 12px Manrope; display: flex; align-items: center; gap: 6px; color: var(--green);">⚙️ Calibración & Sensibilidad</strong>
+            <span style="font: 9px 'DM Mono', monospace; color: var(--amber); background: rgba(237,190,117,0.1); padding: 2px 6px; border-radius: 4px;">AJUSTES</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);">
+              <span>Umbral mínimo de confianza:</span>
+              <span id="sensitivityValueLabel" style="font-family: 'DM Mono', monospace; color: var(--white); font-weight: bold;">50%</span>
+            </div>
+            <input type="range" id="sensitivityRange" min="10" max="90" value="50" style="accent-color: var(--green); cursor: pointer; width: 100%;">
+            <p style="font-size: 10px; color: #87958e; margin: 2px 0 0 0; line-height: 1.4;">
+              Filtra expresiones secundarias con baja probabilidad para lectura más estable.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <!-- Columna Derecha: Panel de Resultados, Distribución y Análisis Estadístico -->
+      <div class="side">
+        <article class="card result">
+          <div class="result-top"><span>LECTURA ACTUAL</span><span id="confidenceTag">—</span></div>
+          <div class="result-display">
+            <div class="emoji" id="mainEmoji">✳</div>
+            <div>
+              <div class="result-name" id="mainEmotion">En espera</div>
+              <div class="result-caption" id="mainCaption">Activa la cámara para comenzar</div>
+            </div>
+          </div>
+          <div class="message" id="message"><b>Todo listo.</b> Cuando quieras, inicia la cámara para explorar una estimación de las expresiones visibles.</div>
+          <div class="confidence">
+            <div class="conf-head"><span>CONFIANZA DEL MODELO</span><span id="confidenceValue">—</span></div>
+            <div class="bar"><span id="confidenceBar"></span></div>
+          </div>
+          <p class="result-quiet">La confianza representa la salida del modelo, no la certeza sobre lo que una persona siente.</p>
+        </article>
+
+        <article class="card distribution">
+          <div class="distribution-head"><strong>Distribución estimada</strong><span>ACTUALIZACIÓN EN VIVO</span></div>
+          <div id="emotionList"></div>
+        </article>
+
+        <!-- TARJETA DE ANÁLISIS ESTADÍSTICO DE SESIÓN -->
+        <article class="card" style="padding: 20px; background: linear-gradient(145deg, #1d2824, #151d1b); border: 1px solid rgba(198, 242, 118, 0.22);">
+          <div class="distribution-head" style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <strong>Análisis Estadístico</strong>
+            <span style="color: var(--green); background: rgba(198, 242, 118, 0.1); padding: 3px 8px; border-radius: 4px; font-weight: bold;">IA + MÉTRICAS</span>
+          </div>
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5;">
+            Calcula la estabilidad emocional y genera un reporte predictivo basado en 15 segundos de muestreo continuo.
+          </p>
+          
+          <button class="btn btn-primary" id="startSessionAnalysisBtn" style="width: 100%; margin-bottom: 14px; justify-content: center; font-weight: bold;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Iniciar Análisis de Sesión (15s)
+          </button>
+
+          <div id="sessionProgressContainer" style="display: none; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; font: 10px 'DM Mono', monospace; color: var(--muted); margin-bottom: 6px;">
+              <span id="sessionStatusText">Muestreando fotogramas...</span>
+              <span id="sessionTimer" style="color: var(--green); font-weight: bold;">15s</span>
+            </div>
+            <div class="bar"><span id="sessionBar" style="width: 100%; transition: width 1s linear;"></span></div>
+          </div>
+
+          <div id="sessionResultCard" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(198, 242, 118, 0.3); border-radius: 10px; padding: 14px; border-left: 4px solid var(--green);">
+            <div style="font: 600 12px Manrope; color: var(--green); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <span>📊</span> Reporte Estadístico Generado
+            </div>
+            <div style="font-size: 11px; color: var(--white); line-height: 1.6;" id="sessionReportText"></div>
+          </div>
+        </article>
+
+        <!-- Tarjeta de sesión con correo actual (Gmail vinculado) -->
+        <article class="card" style="padding: 14px 18px; display: flex; align-items: center; gap: 12px; background: #151d1b;">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--green); color: #1a2714; display: grid; place-items: center; font-weight: bold; font-size: 14px;">
+            👤
+          </div>
+          <div style="overflow: hidden; flex: 1;">
+            <div style="font: 9px 'DM Mono', monospace; color: var(--muted); letter-spacing: 0.5px;">CONECTADO COMO</div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--white); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" id="userEmailDisplay">cesar.villanueva@... / Sesión Activa</div>
+          </div>
+        </article>
+      </div>
+    </section>
+    
+    <footer class="footer"><span>MIRADA LAB · EXPLORACIÓN EDUCATIVA</span><span>Procesamiento local · Modelo TensorFlow.js</span></footer>
+  </main>
+  
+  <div class="toast" id="toast"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
