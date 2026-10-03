@@ -94,7 +94,6 @@ function addFacialLog(emotionLabel, emoji, confidence) {
 
   renderFacialLogs();
   
-  // Actualizar también el panel interactivo de Transición Emocional en vivo
   const timelineSummary = $("#timelineCurrentSummary");
   if (timelineSummary) {
     timelineSummary.textContent = `${emoji} ${emotionLabel} (${Math.round(confidence * 100)}%) - ${timeString}`;
@@ -180,7 +179,6 @@ async function analyzeFrame() {
     const winner = keys.reduce((best, key) => smoothed[key] > smoothed[best] ? key : best);
     showExpression(winner);
 
-    // Registrar en el historial si la confianza supera el umbral dinámico actual
     const currentConf = smoothed[winner] || 0;
     if (currentConf >= minConfidenceThreshold) {
       const lastLog = facialLogs[0];
@@ -215,6 +213,7 @@ async function startCamera() {
     $("#placeholder").hidden = true;
     $("#startBtn").disabled = true;
     $("#stopBtn").disabled = false;
+    $("#captureBtn").disabled = false; // Habilitar botón de captura
     setStatus("EN VIVO", true);
     analyzeFrame();
   } catch (error) {
@@ -233,6 +232,7 @@ function stopCamera() {
   $("#placeholder").hidden = false;
   $("#startBtn").disabled = false;
   $("#stopBtn").disabled = true;
+  $("#captureBtn").disabled = true; // Deshabilitar botón de captura
   setStatus("EN ESPERA", false);
   $("#mainEmotion").textContent = "En espera";
   $("#mainCaption").textContent = "Activa la cámara para comenzar";
@@ -271,24 +271,26 @@ function startSessionAnalysis() {
   const bar = $("#sessionBar");
   const statusText = $("#sessionStatusText");
 
-  progressContainer.style.display = "block";
-  resultCard.style.display = "none";
-  bar.style.transition = "width 1s linear";
-  bar.style.width = "100%";
+  if (progressContainer) progressContainer.style.display = "block";
+  if (resultCard) resultCard.style.display = "none";
+  if (bar) {
+    bar.style.transition = "width 1s linear";
+    bar.style.width = "100%";
+  }
 
   let timeLeft = 15;
-  timerLabel.textContent = `${timeLeft}s`;
-  statusText.textContent = "Muestreando fotogramas de IA...";
+  if (timerLabel) timerLabel.textContent = `${timeLeft}s`;
+  if (statusText) statusText.textContent = "Muestreando fotogramas de IA...";
 
   sessionTimerInterval = setInterval(() => {
     timeLeft--;
-    timerLabel.textContent = `${timeLeft}s`;
-    bar.style.width = `${(timeLeft / 15) * 100}%`;
+    if (timerLabel) timerLabel.textContent = `${timeLeft}s`;
+    if (bar) bar.style.width = `${(timeLeft / 15) * 100}%`;
 
     if (timeLeft <= 0) {
       clearInterval(sessionTimerInterval);
       isAnalyzingSession = false;
-      progressContainer.style.display = "none";
+      if (progressContainer) progressContainer.style.display = "none";
       btn.disabled = false;
       processSessionStatistics();
     }
@@ -300,8 +302,8 @@ function processSessionStatistics() {
   const reportText = $("#sessionReportText");
 
   if (sessionSamples.length === 0) {
-    resultCard.style.display = "block";
-    reportText.innerHTML = "<b>Aviso:</b> No se recolectaron suficientes muestras. Asegúrate de que el rostro esté visible frente a la cámara.";
+    if (resultCard) resultCard.style.display = "block";
+    if (reportText) reportText.innerHTML = "<b>Aviso:</b> No se recolectaron suficientes muestras. Asegúrate de que el rostro esté visible frente a la cámara.";
     return;
   }
 
@@ -330,26 +332,119 @@ function processSessionStatistics() {
   let sortedEmotions = keys.map(k => ({ key: k, val: averages[k] })).sort((a, b) => b.val - a.val);
   let secondaryEmo = sortedEmotions[1] ? emotions[sortedEmotions[1].key] : null;
 
-  reportText.innerHTML = `
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-      <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-        🎯 <b>Predominante:</b><br><span style="font-size: 14px;">${dominantInfo.emoji} ${dominantInfo.label} (${Math.round(averages[dominantKey] * 100)}%)</span>
+  if (reportText) {
+    reportText.innerHTML = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+          🎯 <b>Predominante:</b><br><span style="font-size: 14px;">${dominantInfo.emoji} ${dominantInfo.label} (${Math.round(averages[dominantKey] * 100)}%)</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
+          📈 <b>Índice Bienestar:</b><br><span style="font-size: 14px;">✨ ${positivityPct}%</span>
+        </div>
       </div>
-      <div style="background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px;">
-        📈 <b>Índice Bienestar:</b><br><span style="font-size: 14px;">✨ ${positivityPct}%</span>
+      <div style="margin-bottom: 6px;">⚖️ <b>Patrón de Estabilidad:</b> ${stabilityLabel}</div>
+      ${secondaryEmo ? `<div style="margin-bottom: 6px;">🔍 <b>Segunda expresión notable:</b> ${secondaryEmo.emoji} ${secondaryEmo.label} (${Math.round(averages[sortedEmotions[1].key] * 100)}%)</div>` : ''}
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 11px;">
+        📌 <b>Muestras analizadas:</b> ${sessionSamples.length} fotogramas procesados localmente en 15 segundos.
       </div>
-    </div>
-    <div style="margin-bottom: 6px;">⚖️ <b>Patrón de Estabilidad:</b> ${stabilityLabel}</div>
-    ${secondaryEmo ? `<div style="margin-bottom: 6px;">🔍 <b>Segunda expresión notable:</b> ${secondaryEmo.emoji} ${secondaryEmo.label} (${Math.round(averages[sortedEmotions[1].key] * 100)}%)</div>` : ''}
-    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); color: var(--muted); font-size: 11px;">
-      📌 <b>Muestras analizadas:</b> ${sessionSamples.length} fotogramas procesados localmente en 15 segundos.
-    </div>
-  `;
-  resultCard.style.display = "block";
+    `;
+  }
+  if (resultCard) resultCard.style.display = "block";
   toast("¡Reporte estadístico extendido generado con éxito!");
 }
 
-// Eventos generales e interactivos (Limpiar registros y controles nuevos)
+// ---------------------------------------------------------------------------
+// LÓGICA DE LA VENTANA MODAL PARA "CAPTURAR ROSTRO"
+// ---------------------------------------------------------------------------
+const captureBtn = $("#captureBtn");
+const captureModal = $("#captureModal");
+const closeModalBtn = $("#closeModalBtn");
+const modalFace = $("#modalFace");
+const modalEmoji = $("#modalEmoji");
+const modalEmotion = $("#modalEmotion");
+const modalConfidence = $("#modalConfidence");
+const modalEmotionList = $("#modalEmotionList");
+const modalMessage = $("#modalMessage");
+
+if (captureBtn && captureModal) {
+  captureBtn.addEventListener("click", () => {
+    if (!running) {
+      toast("Inicia la cámara primero para capturar.");
+      return;
+    }
+
+    // 1. Dibujar el fotograma actual del video en el elemento <img> de la modal
+    const sourceWidth = video.videoWidth || 640;
+    const sourceHeight = video.videoHeight || 480;
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = sourceWidth;
+    tempCanvas.height = sourceHeight;
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCtx.drawImage(video, 0, 0, sourceWidth, sourceHeight);
+    modalFace.src = tempCanvas.toDataURL("image/jpeg", 0.9);
+
+    // 2. Determinar cuál es la emoción dominante actual basada en 'smoothed'
+    let dominantKey = keys[0];
+    keys.forEach((key) => {
+      if ((smoothed[key] || 0) > (smoothed[dominantKey] || 0)) {
+        dominantKey = key;
+      }
+    });
+
+    const dominantData = emotions[dominantKey];
+    const confVal = smoothed[dominantKey] || 0;
+
+    // 3. Rellenar los campos principales de la modal
+    modalEmoji.textContent = dominantData.emoji;
+    modalEmotion.textContent = dominantData.label;
+    modalConfidence.textContent = `Confianza del modelo: ${Math.round(confVal * 100)}%`;
+    modalMessage.innerHTML = dominantData.message;
+
+    // 4. Generar la lista con la distribución estimada de las 7 categorías en la modal
+    if (modalEmotionList) {
+      modalEmotionList.innerHTML = keys.map((key) => {
+        const item = emotions[key];
+        const valPct = Math.round((smoothed[key] || 0) * 100);
+        const isActive = key === dominantKey ? "active" : "";
+        return `
+          <div class="emotion-row ${isActive}">
+            <span>${item.emoji}</span>
+            <div class="mini"><i style="width: ${valPct}%"></i></div>
+            <span class="pct">${valPct}%</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // 5. Abrir la ventana modal nativa
+    if (typeof captureModal.showModal === "function") {
+      captureModal.showModal();
+    } else {
+      captureModal.setAttribute("open", "true");
+    }
+  });
+}
+
+if (closeModalBtn && captureModal) {
+  closeModalBtn.addEventListener("click", () => {
+    captureModal.close();
+  });
+
+  // Cerrar al hacer clic fuera del contenido del diálogo
+  captureModal.addEventListener("click", (e) => {
+    const rect = captureModal.getBoundingClientRect();
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    ) {
+      captureModal.close();
+    }
+  });
+}
+
+// Eventos generales e interactivos
 document.addEventListener("click", (e) => {
   if (e.target && e.target.id === "clearLogsBtn") {
     facialLogs = [];
@@ -357,7 +452,6 @@ document.addEventListener("click", (e) => {
     toast("Registros limpios.");
   }
   
-  // Interacción al hacer clic en el nuevo panel de Transición Emocional
   if (e.target.closest && e.target.closest("#timelineCardTrigger")) {
     if (facialLogs.length > 0) {
       toast(`Último registro activo: ${facialLogs[0].text.replace(/<[^>]*>/g, '')}`);
@@ -373,13 +467,15 @@ if (sensitivityRange) {
   sensitivityRange.addEventListener("input", (e) => {
     const val = parseInt(e.target.value, 10);
     minConfidenceThreshold = val / 100;
-    $("#sensitivityValueLabel").textContent = `${val}%`;
+    const valLabel = $("#sensitivityValueLabel");
+    if (valLabel) valLabel.textContent = `${val}%`;
   });
 }
 
 $("#startBtn").addEventListener("click", startCamera);
 $("#stopBtn").addEventListener("click", stopCamera);
-$("#startSessionAnalysisBtn").addEventListener("click", startSessionAnalysis);
+const sessionBtn = $("#startSessionAnalysisBtn");
+if (sessionBtn) sessionBtn.addEventListener("click", startSessionAnalysis);
 
 window.addEventListener("pagehide", () => {
   if (stream) stream.getTracks().forEach((track) => track.stop());
