@@ -14,7 +14,6 @@ matplotlib.use('Agg')  # Obligatorio para generar gráficos en backend sin inter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-#import seaborn as sns
 from fer.fer import FER
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -227,7 +226,7 @@ def api_login():
                         similarity = cv2.compareHist(hist_ref, hist_login, cv2.HISTCMP_CORREL)
                         
                         if similarity < 0.35:
-                            return jsonify({"success": False, "message": "El rostro no coincide con el usuario autorizado."}), 200
+                            return jsonify({"success": False, "message": "El rostro no coincide com el usuario autorizado."}), 200
                 except Exception:
                     app.logger.exception("Error descargando o comparando la imagen de referencia desde Supabase")
 
@@ -373,64 +372,71 @@ def admin_analytics():
         if "user_email" in df.columns:
             grouped = df.groupby("user_email")
             for email, group in grouped:
-                dominant = group["emotion"].mode()[0] if "emotion" in group.columns and not group["emotion"].empty else "—"
+                dominant = group["emotion"].mode().iloc[0] if "emotion" in group.columns and not group["emotion"].empty else "—"
                 mean_conf = float(group["confidence"].mean()) if "confidence" in group.columns else 0.0
-                last_seen = group["recorded_at"].max() if "recorded_at" in group.columns else ""
+                last_seen = str(group["recorded_at"].max()) if "recorded_at" in group.columns else ""
                 users_summary.append({
                     "user_email": email,
-                    "samples": len(group),
-                    "dominant_emotion": dominant,
+                    "samples": int(len(group)),
+                    "dominant_emotion": str(dominant),
                     "mean_confidence": mean_conf,
                     "last_seen": last_seen
                 })
 
         # 3. Estadísticas globales
-        total_samples = len(df)
-        unique_users_count = len(all_users)
-        conf_series = df["confidence"] if "confidence" in df.columns else pd.Series([0])
+        total_samples = int(len(df))
+        unique_users_count = int(len(all_users))
+        conf_series = pd.to_numeric(df["confidence"], errors="coerce").fillna(0) if "confidence" in df.columns else pd.Series([0])
         
         mean_conf = float(conf_series.mean())
         median_conf = float(conf_series.median())
         variance_conf = float(conf_series.var()) if len(conf_series) > 1 else 0.0
         std_conf = float(conf_series.std()) if len(conf_series) > 1 else 0.0
 
-        dominant_emo = df["emotion"].mode()[0] if "emotion" in df.columns and not df["emotion"].empty else "—"
-        dominant_count = len(df[df["emotion"] == dominant_emo]) if "emotion" in df.columns else 0
-        dominant_share = dominant_count / total_samples if total_samples > 0 else 0.0
+        dominant_emo = str(df["emotion"].mode().iloc[0]) if "emotion" in df.columns and not df["emotion"].empty else "—"
+        dominant_count = int(len(df[df["emotion"] == dominant_emo])) if "emotion" in df.columns else 0
+        dominant_share = float(dominant_count / total_samples) if total_samples > 0 else 0.0
 
         mean_distribution = {}
         if "emotion" in df.columns:
             counts = df["emotion"].value_counts(normalize=True).to_dict()
             mean_distribution = {str(k): float(v) for k, v in counts.items()}
 
-        # 4. Gráfico 1: Distribución (Seaborn) en Base64
-        fig, ax = plt.subplots(figsize=(6, 3))
-        if "emotion" in df.columns and not df["emotion"].empty:
-            sns.countplot(data=df, x="emotion", ax=ax, palette="mako")
-            ax.set_ylabel("Frecuencia")
-            ax.set_xlabel("")
-            plt.xticks(rotation=25, fontsize=8)
-        plt.tight_layout()
-        
-        buf1 = io.BytesIO()
-        plt.savefig(buf1, format="png", transparent=True)
-        buf1.seek(0)
-        dist_b64 = base64.b64encode(buf1.getvalue()).decode("utf-8")
-        plt.close(fig)
+        # 4. Gráfico 1: Distribución usando Matplotlib puro
+        dist_b64 = ""
+        try:
+            fig, ax = plt.subplots(figsize=(6, 3))
+            if "emotion" in df.columns and not df["emotion"].empty:
+                emo_counts = df["emotion"].value_counts()
+                ax.bar(emo_counts.index, emo_counts.values, color="#5c4033")
+                ax.set_ylabel("Frecuencia")
+                ax.set_xlabel("")
+                plt.xticks(rotation=25, fontsize=8)
+            plt.tight_layout()
+            buf1 = io.BytesIO()
+            plt.savefig(buf1, format="png", transparent=True)
+            buf1.seek(0)
+            dist_b64 = base64.b64encode(buf1.getvalue()).decode("utf-8")
+            plt.close(fig)
+        except Exception:
+            plt.close('all')
 
-        # 5. Gráfico 2: Tendencia de confianza (Matplotlib) en Base64
-        fig, ax = plt.subplots(figsize=(6, 3))
-        if "confidence" in df.columns:
-            ax.plot(range(len(df)), df["confidence"].values, color="#567b66", linewidth=2, marker="o", markersize=3)
-            ax.set_title("Evolución temporal de confianza", fontsize=9, color="#2c2824")
-            ax.set_ylabel("Confianza", fontsize=8)
-        plt.tight_layout()
-
-        buf2 = io.BytesIO()
-        plt.savefig(buf2, format="png", transparent=True)
-        buf2.seek(0)
-        trend_b64 = base64.b64encode(buf2.getvalue()).decode("utf-8")
-        plt.close(fig)
+        # 5. Gráfico 2: Tendencia de confianza
+        trend_b64 = ""
+        try:
+            fig, ax = plt.subplots(figsize=(6, 3))
+            if "confidence" in df.columns:
+                ax.plot(range(len(df)), conf_series.values, color="#567b66", linewidth=2, marker="o", markersize=3)
+                ax.set_title("Evolución temporal de confianza", fontsize=9, color="#2c2824")
+                ax.set_ylabel("Confianza", fontsize=8)
+            plt.tight_layout()
+            buf2 = io.BytesIO()
+            plt.savefig(buf2, format="png", transparent=True)
+            buf2.seek(0)
+            trend_b64 = base64.b64encode(buf2.getvalue()).decode("utf-8")
+            plt.close(fig)
+        except Exception:
+            plt.close('all')
 
         report_msg = (
             f"Se han analizado un total de {total_samples} muestras procedentes de {unique_users_count} usuario(s). "
@@ -452,8 +458,8 @@ def admin_analytics():
                 "dominant_share": dominant_share,
                 "mean_distribution": mean_distribution
             },
-            "simple_regression": {"available": False, "message": "Calculado localmente en el cliente."},
-            "multiple_regression": {"available": False, "message": "Calculado localmente en el cliente."},
+            "simple_regression": {"available": False, "message": "Calculado localmente."},
+            "multiple_regression": {"available": False, "message": "Calculado localmente."},
             "segments": [],
             "report": report_msg,
             "charts": {
