@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4e3629">
+  <title>Panel de Administración — Calma Vital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg-white: #ffffff;
+      --bg-body: #fdfbf9;
+      --brown-dark: #3a271d;
+      --brown-bar: #4e3629;
+      --brown-primary: #5c4033;
+      --brown-hover: #442f25;
+      --brown-light: #f5eee8;
+      --text-main: #2c221e;
+      --text-muted: #6e5e56;
+      --border-color: #e8dfd7;
+      --glow-soft: rgba(92, 64, 51, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ENCABEZADO FIJO */
+    .sticky-header-container {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      width: 100%;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+    .top-sub-bar {
+      background-color: var(--brown-dark);
+      padding: 8px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #e3d7cf;
+      font-size: 12.5px;
+    }
+    .top-sub-bar a {
+      color: #e3d7cf;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .top-sub-bar a:hover { color: #ffffff; }
+
+    .main-header-bar {
+      background-color: var(--brown-bar);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-logo-svg {
+      width: 48px;
+      height: 48px;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 900;
+      font-size: 26px;
+      letter-spacing: 1px;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .brand-subtext {
+      font-size: 12px;
+      color: #dcd0c9;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    /* CONTENEDOR LOGIN ADMIN */
+    .admin-wrapper {
+      width: 100%;
+      max-width: 500px;
+      padding: 60px 20px;
+    }
+    .admin-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 45px;
+      box-shadow: 0 20px 45px rgba(78, 54, 41, 0.08), 0 0 30px var(--glow-soft);
+      text-align: center;
+    }
+    .admin-card h1 {
+      font: 900 26px Manrope, sans-serif;
+      color: var(--brown-primary);
+      margin: 0 0 8px;
+    }
+    .admin-card p {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      margin-bottom: 24px;
+    }
+    .form-group {
+      text-align: left;
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--brown-primary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--brown-light);
+      border: 1.5px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--brown-primary); background: #fff; }
+
+    .btn-admin {
+      width: 100%;
+      background: linear-gradient(135deg, var(--brown-primary), var(--brown-dark));
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: all 0.25s;
+      box-shadow: 0 6px 18px rgba(92, 64, 51, 0.25);
+    }
+    .btn-admin:hover { background: var(--brown-hover); transform: translateY(-2px); }
+
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      display: none;
+    }
+    .message.error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; display: block; }
+    .message.success { background: #d1fae5; border: 1px solid #6ee7b7; color: #065f46; display: block; }
+    
+    .back-link {
+      display: inline-block;
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-link:hover { color: var(--brown-primary); text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header class="sticky-header-container">
+    <div class="top-sub-bar">
+      <span>Panel de Control Interno</span>
+      <a href="/">← Volver al sitio principal</a>
+    </div>
+    <div class="main-header-bar">
+      <div class="brand-container">
+        <svg class="brand-logo-svg" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 30 C 25 10, 75 10, 90 30 C 75 50, 25 50, 10 30 Z" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="50" cy="30" r="13" fill="currentColor"/>
+          <circle cx="45" cy="25" r="4" fill="#ffffff"/>
+        </svg>
+        <div>
+          <span class="brand-name">CALMA VITAL</span>
+          <div class="brand-subtext">Acceso Restringido - Administradores</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-wrapper">
+    <div class="admin-card">
+      <h1>Portal Administrador</h1>
+      <p>Ingresa tus credenciales de gestión clínica.</p>
+
+      <div class="form-group">
+        <label for="adminEmail">Correo de Administrador</label>
+        <input type="email" id="adminEmail" class="form-control" placeholder="admin@calmavital.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="adminPassword">Contraseña</label>
+        <input type="password" id="adminPassword" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <button class="btn-admin" id="btnAdminLogin">Ingresar al Panel</button>
+      <div class="message" id="adminMessage"></div>
+
+      <a href="/" class="back-link">Regresar a la página de inicio</a>
+    </div>
+  </main>
+
+  <script>
+    const btnAdminLogin = document.getElementById('btnAdminLogin');
+    const msgBox = document.getElementById('adminMessage');
+
+    btnAdminLogin.addEventListener('click', async () => {
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
+
+      if (!email || !password) {
+        msgBox.className = "message error";
+        msgBox.innerText = "Completa todos los campos.";
+        return;
+      }
+
+      btnAdminLogin.disabled = true;
+      btnAdminLogin.innerText = "Verificando...";
+      msgBox.className = "message";
+
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          msgBox.className = "message success";
+          msgBox.innerText = "¡Acceso concedido! Redirigiendo...";
+          setTimeout(() => {
+            window.location.href = "/admin/panel"; // <--- AQUÍ ESTABA EL CAMBIO CLAVE
+          }, 1000);
+        } else {
+          msgBox.className = "message error";
+          msgBox.innerText = data.message || "Credenciales incorrectas.";
+          btnAdminLogin.disabled = false;
+          btnAdminLogin.innerText = "Ingresar al Panel";
+        }
+      } catch (e) {
+        msgBox.className = "message error";
+        msgBox.innerText = "Error de conexión con el servidor.";
+        btnAdminLogin.disabled = false;
+        btnAdminLogin.innerText = "Ingresar al Panel";
+      }
+    });
+  </script>
+</body>
+</html>
