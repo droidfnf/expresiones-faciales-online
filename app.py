@@ -14,7 +14,7 @@ matplotlib.use('Agg')  # Obligatorio para generar gráficos en backend sin inter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 from fer.fer import FER
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
