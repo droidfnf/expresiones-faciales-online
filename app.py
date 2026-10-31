@@ -708,6 +708,7 @@ def too_large(_error):
     return jsonify({"error": "El fotograma es demasiado grande."}), 413
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    # Obtiene el puerto que asigna Render automáticamente (o usa el 5000 por defecto si estás en tu PC local)
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
