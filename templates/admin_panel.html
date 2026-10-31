@@ -37,8 +37,37 @@
     </section>
     <section class="two-col">
       <article class="panel"><div class="panel-title"><div><h2>Estadística básica</h2><p>Medidas descriptivas de la confianza registrada.</p></div><span class="tag">PANDAS · NUMPY</span></div><div class="stats-grid"><div class="stat"><span>Media</span><strong id="statMean">—</strong></div><div class="stat"><span>Mediana</span><strong id="statMedian">—</strong></div><div class="stat"><span>Varianza</span><strong id="statVariance">—</strong></div><div class="stat"><span>Desviación estándar</span><strong id="statStd">—</strong></div></div><table class="prob-table"><thead><tr><th>Probabilidad media estimada</th><th>Valor</th></tr></thead><tbody id="probabilityTable"></tbody></table><p class="footnote">Las probabilidades son salidas del modelo FER. La media y la dispersión describen esos valores almacenados.</p></article>
-      <article class="panel"><div class="panel-title"><div><h2>Resumen del usuario</h2><p>Descripción automática del período filtrado.</p></div><span class="tag">INFORME ORIENTATIVO</span></div><div class="report" id="userReport">Selecciona un usuario para generar su resumen estadístico individual.</div><div class="report-warning">No es diagnóstico clínico ni recomendación terapéutica. No debe usarse para tomar decisiones médicas, laborales o educativas.</div><p class="footnote">Para ver un informe individual, elige un usuario en el filtro superior.</p></article>
+      
+      <!-- SECCIÓN RESUMEN DEL USUARIO CON FOTO AMPLIADA Y RECOMENDACIÓN DE IA -->
+      <article class="panel">
+        <div class="panel-title">
+          <div><h2>Resumen del usuario</h2><p>Perfil e informe individual del paciente seleccionado.</p></div>
+          <span class="tag">PERFIL CLÍNICO</span>
+        </div>
+        
+        <!-- Tarjeta de foto de referencia ampliada -->
+        <div id="userProfileCard" style="display: none; align-items: center; gap: 18px; background: #fcfbf9; border: 1.5px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(78, 54, 41, 0.05);">
+          <img id="userProfileImg" src="" alt="Foto de registro" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--brown); box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+          <div>
+            <span style="font: 700 9px 'DM Mono', monospace; color: var(--green); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 3px;">Paciente Seleccionado</span>
+            <strong id="profileEmail" style="font-family: Manrope, sans-serif; font-size: 15px; display: block; color: var(--ink); margin-bottom: 4px;">—</strong>
+            <span style="font-size: 12px; color: var(--muted);" id="profileDetails">—</span>
+          </div>
+        </div>
+
+        <div class="report" id="userReport">Selecciona un usuario para generar su resumen estadístico individual.</div>
+        
+        <!-- Contenedor para la Opinión y Consejo Clínico de IA -->
+        <div style="margin-top: 15px; background: #faf5f0; border-left: 4px solid var(--brown); padding: 14px; border-radius: 8px;">
+          <strong style="font-family: Manrope, sans-serif; font-size: 11px; color: var(--brown); text-transform: uppercase; display: block; margin-bottom: 5px;"> Opinión y Consejo Clínico de IA</strong>
+          <p id="aiRecommendationText" style="margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink);">Selecciona un filtro o usuario para ver la recomendación automatizada.</p>
+        </div>
+
+        <div class="report-warning" style="margin-top: 12px;">No es diagnóstico clínico ni recomendación terapéutica. No debe usarse para tomar decisiones médicas, laborales o educativas.</div>
+        <p class="footnote">Para ver un informe individual, elige un usuario en el filtro superior o haz clic en su correo en la tabla inferior.</p>
+      </article>
     </section>
+
     <section class="model-grid">
       <article class="model-card"><div class="panel-title"><div><h2>Regresión lineal simple</h2><p>Una variable de entrada para explicar una variable de salida.</p></div><span class="tag">y = mx + b</span></div><div class="formula">x = orden de muestra · y = confianza estimada</div><div class="model-result" id="simpleRegression">Calculando con los registros seleccionados…</div><p class="footnote">El ajuste resume una tendencia matemática; no implica que el tiempo cause un cambio en una emoción.</p></article>
       <article class="model-card"><div class="panel-title"><div><h2>Regresión lineal múltiple</h2><p>Exploración con las siete probabilidades como variables de entrada.</p></div><span class="tag">NUMPY · MÍNIMOS CUADRADOS</span></div><div class="formula">ŷ = β₀ + β₁x₁ + … + β₇x₇</div><div class="model-result" id="multipleRegression">Calculando con los registros seleccionados…</div><div class="coef-list" id="coefficients"></div><p class="footnote">Análisis exploratorio de la relación entre puntuaciones del mismo clasificador; no mide causas.</p></article>
