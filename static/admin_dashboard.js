@@ -17,7 +17,6 @@ function renderUsers(users, selectedUser) {
   select.replaceChildren(new Option("Todos los usuarios", "all"));
   users.forEach((email) => select.add(new Option(email, email)));
   select.value = users.includes(prior) ? prior : "all";
-
 }
 
 function renderUserTable(rows) {
@@ -139,7 +138,8 @@ async function loadDashboard() {
       return;
     }
     if (!response.ok) throw new Error(data.error || "No se pudieron cargar los datos.");
-    renderUsers(data.users || [], data.filters?.user);
+    
+    renderUsers(data.users || [], $("#userFilter").value);
     renderUserTable(data.users_summary || []);
     renderEvents(data.recent_events || []);
     renderProbabilityTable(data.stats.mean_distribution || {});
@@ -160,6 +160,29 @@ async function loadDashboard() {
     $("#userReport").textContent = data.report || "No hay resumen disponible.";
     $("#distributionChart").src = `data:image/png;base64,${data.charts.distribution}`;
     $("#trendChart").src = `data:image/png;base64,${data.charts.trend}`;
+
+    // GESTIÓN DE LA RECOMENDACIÓN Y OPINIÓN CLÍNICA DE LA IA
+    const aiBox = $("#aiRecommendationText");
+    if (aiBox) {
+      aiBox.textContent = data.ai_recommendation || "Sin recomendaciones disponibles para este período.";
+    }
+
+    // GESTIÓN DE LA FOTO DEL PERFIL DEL USUARIO SELECCIONADO
+    const profileCard = $("#userProfileCard");
+    const profileImg = $("#userProfileImg");
+    const profileEmail = $("#profileEmail");
+    const profileDetails = $("#profileDetails");
+    const currentSelectedUser = $("#userFilter").value;
+
+    if (profileCard && currentSelectedUser && currentSelectedUser !== "all" && data.selected_user_photo) {
+      profileImg.src = data.selected_user_photo;
+      profileEmail.textContent = currentSelectedUser;
+      profileDetails.textContent = `Muestras totales en el filtro: ${formatNumber(stats.samples, 0)}`;
+      profileCard.style.display = "flex";
+    } else if (profileCard) {
+      profileCard.style.display = "none";
+    }
+
     status.textContent = data.truncated ? "Se muestran hasta 20 000 muestras recientes. Reduce el período para explorar datos antiguos." : `${formatNumber(stats.samples, 0)} muestras consultadas.`;
   } catch (error) {
     status.textContent = error.message;
