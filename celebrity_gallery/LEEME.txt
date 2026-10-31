@@ -1,0 +1,4 @@
+Coloca fotos de referencia de famosos aquí, por ejemplo Shakira.jpg o Lionel Messi.jpg.
+Formatos: JPG, JPEG, PNG o WEBP. Varias fotos: Nombre.jpg y Nombre__2.jpg.
+Usa fotos frontales, claras, de un solo rostro y con derecho de uso. Reinicia el servidor después de agregarlas.
+No se incluyen imágenes de famosos en el ZIP.
