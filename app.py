@@ -6,7 +6,9 @@ import base64
 import binascii
 import io
 import os
+import secrets
 import threading
+from pathlib import Path
 
 import cv2
 import matplotlib
@@ -14,25 +16,31 @@ matplotlib.use('Agg')  # Obligatorio para generar gráficos en backend sin inter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from fer.fer import FER
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
-app.secret_key = "clave_secreta_super_segura_cambiar_en_produccion"
+app.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
 
 # ==========================================
 # CONFIGURACIÓN DE SUPABASE
 # ==========================================
-SUPABASE_URL = "https://xcmfthbsiqaiindwrmik.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjbWZ0aGJzaXFhaWluZHdybWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NjY3NDMsImV4cCI6MjEwNjQ0Mjc0M30.Go_ec7L1rW_E1CvPBdJrWX6nxBnfIL5sCogzbLeThoY"
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip()
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 _detector: FER | None = None
 _model_lock = threading.Lock()
 _detector_lock = threading.Lock()
+_celebrity_embeddings: dict[str, np.ndarray] | None = None
+_celebrity_gallery_lock = threading.Lock()
 
 
 def get_detector() -> FER:
@@ -42,6 +50,53 @@ def get_detector() -> FER:
             if _detector is None:
                 _detector = FER(mtcnn=False)
     return _detector
+
+
+def get_celebrity_embeddings() -> dict[str, np.ndarray]:
+    """Crea la galería de referencias en memoria; no persiste la captura ni sus vectores."""
+    global _celebrity_embeddings
+    if _celebrity_embeddings is not None:
+        return _celebrity_embeddings
+    with _celebrity_gallery_lock:
+        if _celebrity_embeddings is not None:
+            return _celebrity_embeddings
+        gallery_dir = Path(app.root_path) / "celebrity_gallery"
+        files = sorted(
+            path for path in gallery_dir.glob("*")
+            if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
+        )
+        if not files:
+            _celebrity_embeddings = {}
+            return _celebrity_embeddings
+
+        from deepface import DeepFace
+
+        grouped: dict[str, list[np.ndarray]] = {}
+        for path in files:
+            image = cv2.imread(str(path))
+            if image is None:
+                continue
+            name = path.stem.split("__", 1)[0].replace("_", " ").strip()
+            try:
+                embedded = DeepFace.represent(
+                    img_path=image, model_name="Facenet512", detector_backend="opencv",
+                    enforce_detection=True, align=True, max_faces=1,
+                )
+                if embedded:
+                    vector = np.asarray(embedded[0]["embedding"], dtype=np.float32)
+                    norm = float(np.linalg.norm(vector))
+                    if norm > 0:
+                        grouped.setdefault(name, []).append(vector / norm)
+            except Exception:
+                app.logger.warning("Se omite referencia facial no válida: %s", path.name, exc_info=True)
+
+        _celebrity_embeddings = {}
+        for name, vectors in grouped.items():
+            vector = np.mean(vectors, axis=0)
+            norm = float(np.linalg.norm(vector))
+            if norm > 0:
+                _celebrity_embeddings[name] = vector / norm
+        return _celebrity_embeddings
 
 
 @app.get("/")
@@ -68,13 +123,13 @@ def admin_login_page():
 def api_admin_login():
     """Valida las credenciales del Administrador."""
     payload = request.get_json(silent=True) or {}
-    email = payload.get("email", "").strip()
+    email = str(payload.get("email", "")).strip().lower()
     password = payload.get("password", "")
 
-    ADMIN_EMAIL = "admin@calmavital.com"
-    ADMIN_PASSWORD = "adminpassword123"
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip().lower()
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 
-    if email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+    if ADMIN_EMAIL and ADMIN_PASSWORD and email == ADMIN_EMAIL and password == ADMIN_PASSWORD:
         session["authenticated"] = True
         session["is_admin"] = True
         session["user_email"] = email
@@ -154,7 +209,9 @@ def main_app():
     """Ruta protegida: Muestra el laboratorio de expresiones solo si hay sesión activa."""
     if not session.get("authenticated") or session.get("is_admin"):
         return redirect(url_for("login_page"))
-    return render_template("index.html")
+    
+    user_email = session.get("user_email", "usuario@calmavital.com")
+    return render_template("index.html", user_email=user_email)
 
 
 @app.post("/api/login")
@@ -226,7 +283,7 @@ def api_login():
                         similarity = cv2.compareHist(hist_ref, hist_login, cv2.HISTCMP_CORREL)
                         
                         if similarity < 0.35:
-                            return jsonify({"success": False, "message": "El rostro no coincide com el usuario autorizado."}), 200
+                            return jsonify({"success": False, "message": "El rostro no coincide con el usuario autorizado."}), 200
                 except Exception:
                     app.logger.exception("Error descargando o comparando la imagen de referencia desde Supabase")
 
@@ -317,12 +374,164 @@ def predict():
     )
 
 
+@app.get("/reporte-pdf")
+def reporte_pdf():
+    """Genera el reporte clínico filtrando falsos positivos de enojo y calculando una emoción dominante más realista."""
+    if not session.get("authenticated"):
+        return redirect(url_for("login_page"))
+    
+    user_email = session.get("user_email", "usuario@calmavital.com")
+    
+    try:
+        response = supabase.table("facial_logs").select("*").eq("user_email", user_email).order("recorded_at", desc=True).execute()
+        rows = response.data if response and hasattr(response, "data") else []
+    except Exception:
+        rows = []
+        
+    total_samples = len(rows)
+    
+    if total_samples > 0:
+        df = pd.DataFrame(rows)
+        
+        if "emotion" in df.columns and "confidence" in df.columns:
+            df.loc[(df["emotion"] == "angry") & (df["confidence"] < 0.50), "emotion"] = "neutral"
+            
+        dominant_emo_en = df["emotion"].mode()[0] if not df["emotion"].empty else "neutral"
+        mean_conf = float(df["confidence"].mean())
+    else:
+        dominant_emo_en = "neutral"
+        mean_conf = 0.0
+        
+    traducciones = {
+        "happy": "Feliz / Positivo",
+        "sad": "Triste / Fatiga",
+        "angry": "Tensión / Frustración",
+        "fear": "Ansiedad / Alerta",
+        "surprise": "Sorpresa",
+        "disgust": "Disgusto",
+        "neutral": "Calma / Equilibrio Neutral"
+    }
+    
+    dominant_emo_es = traducciones.get(dominant_emo_en.lower(), dominant_emo_en.capitalize())
+        
+    mensajes_emociones = {
+        "happy": {
+            "estado": "Óptimo / Bienestar Anímico Elevado",
+            "mensaje": "Se observa un patrón gestual alegre y distendido. Refleja confianza personal, actitud positiva y un estado anímico favorable para las actividades cotidianas."
+        },
+        "sad": {
+            "estado": "Fatiga Anímica / Decaimiento",
+            "mensaje": "Se detectaron indicios de cansancio o melancolía leve. Se recomienda tomar descansos visuales y alternar con actividades relajantes."
+        },
+        "angry": {
+            "estado": "Tensión o Alta Concentración",
+            "mensaje": "Se registraron gestos de tensión facial. A menudo esto ocurre por alta concentración frente al monitor o fatiga visual más que por enojo real. Se aconseja realizar pausas activas."
+        },
+        "fear": {
+            "estado": "Alerta / Carga de Estrés",
+            "mensaje": "Se perciben leves señales de aprensión. Practicar respiraciones profundas ayudará a equilibrar la estabilidad emocional."
+        },
+        "neutral": {
+            "estado": "Equilibrio y Calma Estable",
+            "mensaje": "El perfil gestual se mantiene en un rango sumamente calmado, equilibrado y sereno. Denota control cognitivo adecuado y claridad mental."
+        }
+    }
+    
+    info_emocion = mensajes_emociones.get(dominant_emo_en.lower(), {
+        "estado": "Estable / En Monitoreo",
+        "mensaje": "El monitoreo muestra un perfil gestual normal dentro de los parámetros habituales."
+    })
+    
+    for r in rows:
+        emo_raw = r.get("emotion", "").lower()
+        r["emotion_es"] = traducciones.get(emo_raw, emo_raw.capitalize())
+    
+    return render_template(
+        "reporte.html",
+        user_email=user_email,
+        total_samples=total_samples,
+        dominant_emo=dominant_emo_es,
+        mean_conf=round(mean_conf * 100, 1),
+        estado_clinico=info_emocion["estado"],
+        mensaje_clinico=info_emocion["mensaje"],
+        rows=rows[:10]
+    )
+
+
+@app.post("/api/celebrity/compare")
+def compare_celebrity_lookalikes():
+    if not session.get("authenticated") or session.get("is_admin"):
+        return jsonify({"success": False, "message": "Inicia sesión como usuario para comparar la captura."}), 401
+    payload = request.get_json(silent=True) or {}
+    image_data = payload.get("image", "")
+    if not isinstance(image_data, str) or "," not in image_data:
+        return jsonify({"success": False, "message": "No se recibió una captura válida."}), 400
+    try:
+        raw = base64.b64decode(image_data.split(",", 1)[1], validate=True)
+        image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
+    except (ValueError, binascii.Error):
+        return jsonify({"success": False, "message": "La captura no se pudo leer."}), 400
+    if image is None or image.size == 0:
+        return jsonify({"success": False, "message": "La captura no se pudo leer."}), 400
+
+    gallery = get_celebrity_embeddings()
+    if not gallery:
+        return jsonify({"success": False, "message": "Aún no hay fotos en celebrity_gallery. Consulta README.md para agregarlas."}), 404
+    try:
+        from deepface import DeepFace
+
+        embedded = DeepFace.represent(
+            img_path=image, model_name="Facenet512", detector_backend="opencv",
+            enforce_detection=True, align=True, max_faces=1,
+        )
+        if not embedded:
+            return jsonify({"success": False, "message": "No se encontró un rostro claro en la captura."}), 422
+        vector = np.asarray(embedded[0]["embedding"], dtype=np.float32)
+        norm = float(np.linalg.norm(vector))
+        if norm <= 0:
+            return jsonify({"success": False, "message": "No se pudo calcular la comparación."}), 422
+        vector /= norm
+
+        matches = []
+        gallery_dir = Path(app.root_path) / "celebrity_gallery"
+
+        for name, reference in gallery.items():
+            sim = round(max(0.0, min(1.0, float(np.dot(vector, reference)))) * 100, 1)
+            
+            # Buscar la imagen física del famoso para enviarla en base64
+            img_base64 = ""
+            for path in gallery_dir.glob("*"):
+                if path.is_file() and path.stem.split("__", 1)[0].replace("_", " ").strip().lower() == name.lower():
+                    try:
+                        with open(path, "rb") as image_file:
+                            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                            ext = path.suffix.lower().replace(".", "")
+                            if ext == "jpg":
+                                ext = "jpeg"
+                            img_base64 = f"data:image/{ext};base64,{encoded_string}"
+                        break
+                    except Exception:
+                        pass
+
+            matches.append({
+                "name": name,
+                "similarity": sim,
+                "image": img_base64
+            })
+
+        matches = sorted(matches, key=lambda item: item["similarity"], reverse=True)
+        return jsonify({"success": True, "matches": matches[:3]})
+    except Exception:
+        app.logger.exception("No se pudo comparar con la galería de famosos")
+        return jsonify({"success": False, "message": "No se pudo completar la comparación. Revisa las referencias y dependencias."}), 503
+
+
 # ==========================================
 # RUTA API PARA EL PANEL ADMINISTRADOR
 # ==========================================
 @app.get("/api/admin/analytics")
 def admin_analytics():
-    """Ruta API para alimentar el panel administrativo con métricas y gráficos desde Supabase."""
+    """Ruta API para alimentar el panel administrativo con métricas, fotos de perfil y recomendaciones de IA."""
     if not session.get("authenticated") or not session.get("is_admin"):
         return jsonify({"error": "No autorizado"}), 401
 
@@ -348,6 +557,8 @@ def admin_analytics():
                 "users": [],
                 "users_summary": [],
                 "recent_events": [],
+                "selected_user_photo": None,
+                "ai_recommendation": "Sin datos suficientes para emitir una recomendación automatizada de IA.",
                 "stats": {
                     "samples": 0, "users": 0, "mean_confidence": 0, 
                     "dominant_emotion": "—", "dominant_share": 0, 
@@ -367,76 +578,92 @@ def admin_analytics():
         # 1. Lista de usuarios únicos
         all_users = df["user_email"].unique().tolist() if "user_email" in df.columns else []
 
-        # 2. Resumen por usuario
+        # 2. Resumen por usuario y obtención de foto de perfil
         users_summary = []
+        selected_user_photo = None
+
         if "user_email" in df.columns:
+            users_db_res = supabase.table("users").select("email, face_image_url").execute()
+            photos_map = {u["email"]: u.get("face_image_url") for u in (users_db_res.data or [])}
+
             grouped = df.groupby("user_email")
             for email, group in grouped:
-                dominant = group["emotion"].mode().iloc[0] if "emotion" in group.columns and not group["emotion"].empty else "—"
+                dominant = group["emotion"].mode()[0] if "emotion" in group.columns and not group["emotion"].empty else "—"
                 mean_conf = float(group["confidence"].mean()) if "confidence" in group.columns else 0.0
-                last_seen = str(group["recorded_at"].max()) if "recorded_at" in group.columns else ""
+                last_seen = group["recorded_at"].max() if "recorded_at" in group.columns else ""
+                p_url = photos_map.get(email, "")
+
+                if user_filter == email:
+                    selected_user_photo = p_url
+
                 users_summary.append({
                     "user_email": email,
-                    "samples": int(len(group)),
-                    "dominant_emotion": str(dominant),
+                    "samples": len(group),
+                    "dominant_emotion": dominant,
                     "mean_confidence": mean_conf,
-                    "last_seen": last_seen
+                    "last_seen": last_seen,
+                    "face_image_url": p_url
                 })
 
         # 3. Estadísticas globales
-        total_samples = int(len(df))
-        unique_users_count = int(len(all_users))
-        conf_series = pd.to_numeric(df["confidence"], errors="coerce").fillna(0) if "confidence" in df.columns else pd.Series([0])
+        total_samples = len(df)
+        unique_users_count = len(all_users)
+        conf_series = df["confidence"] if "confidence" in df.columns else pd.Series([0])
         
         mean_conf = float(conf_series.mean())
         median_conf = float(conf_series.median())
         variance_conf = float(conf_series.var()) if len(conf_series) > 1 else 0.0
         std_conf = float(conf_series.std()) if len(conf_series) > 1 else 0.0
 
-        dominant_emo = str(df["emotion"].mode().iloc[0]) if "emotion" in df.columns and not df["emotion"].empty else "—"
-        dominant_count = int(len(df[df["emotion"] == dominant_emo])) if "emotion" in df.columns else 0
-        dominant_share = float(dominant_count / total_samples) if total_samples > 0 else 0.0
+        dominant_emo = df["emotion"].mode()[0] if "emotion" in df.columns and not df["emotion"].empty else "—"
+        dominant_count = len(df[df["emotion"] == dominant_emo]) if "emotion" in df.columns else 0
+        dominant_share = dominant_count / total_samples if total_samples > 0 else 0.0
 
         mean_distribution = {}
         if "emotion" in df.columns:
             counts = df["emotion"].value_counts(normalize=True).to_dict()
             mean_distribution = {str(k): float(v) for k, v in counts.items()}
 
-        # 4. Gráfico 1: Distribución usando Matplotlib puro
-        dist_b64 = ""
-        try:
-            fig, ax = plt.subplots(figsize=(6, 3))
-            if "emotion" in df.columns and not df["emotion"].empty:
-                emo_counts = df["emotion"].value_counts()
-                ax.bar(emo_counts.index, emo_counts.values, color="#5c4033")
-                ax.set_ylabel("Frecuencia")
-                ax.set_xlabel("")
-                plt.xticks(rotation=25, fontsize=8)
-            plt.tight_layout()
-            buf1 = io.BytesIO()
-            plt.savefig(buf1, format="png", transparent=True)
-            buf1.seek(0)
-            dist_b64 = base64.b64encode(buf1.getvalue()).decode("utf-8")
-            plt.close(fig)
-        except Exception:
-            plt.close('all')
+        # Diccionario de recomendaciones clínicas / IA según la emoción predominante
+        recomendaciones_ia = {
+            "happy": "El usuario presenta un patrón de alegría predominante. Recomendación de IA: Reforzar este estado positivo fomentando actividades de alta satisfacción personal, continuidad en sus rutinas saludables y validación de su alta autoestima y confianza actual.",
+            "sad": "Se detecta un predominio de tristeza o fatiga anímica. Recomendación de IA: Se sugiere un espacio de escucha activa, pausas de descanso prolongadas, evitar la sobrecarga laboral y considerar una derivación preventiva para apoyo emocional.",
+            "angry": "El análisis muestra registros frecuentes de tensión o frustración. Recomendación de IA: Es probable que exista fatiga visual o estrés acumulado frente al entorno digital. Se aconseja programar pausas activas, ejercicios de respiración diafragmática y control de estímulos estresantes.",
+            "fear": "Predominan indicadores de ansiedad o alerta. Recomendación de IA: Conviene evaluar factores de presión en su entorno inmediato. Se sugiere aplicar técnicas de relajación (grounding) y ejercicios de respiración para reducir la carga de tensión.",
+            "surprise": "Se observa alta reactividad expresiva. Recomendación de IA: Monitorear si el usuario se encuentra expuesto a estímulos cambiantes o entornos de alta exigencia cognitiva.",
+            "disgust": "Presencia de gestos sutiles de rechazo. Recomendación de IA: Revisar los detonantes ambientales o visuales que puedan estar generando incomodidad en el espacio de trabajo.",
+            "neutral": "El usuario se encuentra en un estado de equilibrio y calma estable. Recomendación de IA: Excelente nivel de control cognitivo y serenidad. Se recomienda mantener las condiciones actuales de bienestar y estabilidad."
+        }
+        ai_recommendation = recomendaciones_ia.get(dominant_emo.lower(), "Sin datos suficientes para emitir una recomendación automatizada de IA.")
 
-        # 5. Gráfico 2: Tendencia de confianza
-        trend_b64 = ""
-        try:
-            fig, ax = plt.subplots(figsize=(6, 3))
-            if "confidence" in df.columns:
-                ax.plot(range(len(df)), conf_series.values, color="#567b66", linewidth=2, marker="o", markersize=3)
-                ax.set_title("Evolución temporal de confianza", fontsize=9, color="#2c2824")
-                ax.set_ylabel("Confianza", fontsize=8)
-            plt.tight_layout()
-            buf2 = io.BytesIO()
-            plt.savefig(buf2, format="png", transparent=True)
-            buf2.seek(0)
-            trend_b64 = base64.b64encode(buf2.getvalue()).decode("utf-8")
-            plt.close(fig)
-        except Exception:
-            plt.close('all')
+        # 4. Gráfico 1: Distribución (Seaborn) en Base64
+        fig, ax = plt.subplots(figsize=(6, 3))
+        if "emotion" in df.columns and not df["emotion"].empty:
+            sns.countplot(data=df, x="emotion", ax=ax, palette="mako")
+            ax.set_ylabel("Frecuencia")
+            ax.set_xlabel("")
+            plt.xticks(rotation=25, fontsize=8)
+        plt.tight_layout()
+        
+        buf1 = io.BytesIO()
+        plt.savefig(buf1, format="png", transparent=True)
+        buf1.seek(0)
+        dist_b64 = base64.b64encode(buf1.getvalue()).decode("utf-8")
+        plt.close(fig)
+
+        # 5. Gráfico 2: Tendencia de confianza (Matplotlib) en Base64
+        fig, ax = plt.subplots(figsize=(6, 3))
+        if "confidence" in df.columns:
+            ax.plot(range(len(df)), df["confidence"].values, color="#567b66", linewidth=2, marker="o", markersize=3)
+            ax.set_title("Evolución temporal de confianza", fontsize=9, color="#2c2824")
+            ax.set_ylabel("Confianza", fontsize=8)
+        plt.tight_layout()
+
+        buf2 = io.BytesIO()
+        plt.savefig(buf2, format="png", transparent=True)
+        buf2.seek(0)
+        trend_b64 = base64.b64encode(buf2.getvalue()).decode("utf-8")
+        plt.close(fig)
 
         report_msg = (
             f"Se han analizado un total de {total_samples} muestras procedentes de {unique_users_count} usuario(s). "
@@ -447,6 +674,8 @@ def admin_analytics():
             "users": all_users,
             "users_summary": users_summary,
             "recent_events": rows[:15],
+            "selected_user_photo": selected_user_photo,
+            "ai_recommendation": ai_recommendation,
             "stats": {
                 "samples": total_samples,
                 "users": unique_users_count,
@@ -458,8 +687,8 @@ def admin_analytics():
                 "dominant_share": dominant_share,
                 "mean_distribution": mean_distribution
             },
-            "simple_regression": {"available": False, "message": "Calculado localmente."},
-            "multiple_regression": {"available": False, "message": "Calculado localmente."},
+            "simple_regression": {"available": False, "message": "Calculado localmente en el cliente."},
+            "multiple_regression": {"available": False, "message": "Calculado localmente en el cliente."},
             "segments": [],
             "report": report_msg,
             "charts": {
