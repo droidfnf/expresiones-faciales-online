@@ -3,103 +3,646 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101716">
+  <meta name="theme-color" content="#4e3629">
   <meta name="description" content="Explora expresiones faciales con un modelo de aprendizaje automático que funciona en tu navegador.">
-  <title>Mirada — Sistema Python de expresiones</title>
+  <title>Calma Vital — Sistema Python de Expresiones y Análisis Facial</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    :root{color-scheme:dark;--bg:#101716;--panel:#171f1d;--panel2:#1b2522;--line:#283330;--muted:#93a29b;--white:#f1f4ed;--green:#c6f276;--green2:#a8d65b;--mint:#6eaa91;--amber:#edbe75}
-    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 7% 0%,#26302a 0,transparent 34%),var(--bg);color:var(--white);font-family:'DM Sans',sans-serif} button{font:inherit;color:inherit}.shell{max-width:1380px;margin:0 auto;padding:0 42px 48px}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff10}.brand{display:flex;align-items:center;gap:12px;font:800 19px Manrope,sans-serif;letter-spacing:-.7px}.brand-mark{height:35px;width:35px;border-radius:12px;background:var(--green);display:grid;place-items:center;color:#1a2714}.brand-mark svg{width:22px}.brand small{display:block;font:500 9px 'DM Mono',monospace;letter-spacing:1.4px;color:var(--muted);margin-top:3px}.top-meta{display:flex;align-items:center;gap:9px;color:var(--muted);font:11px 'DM Mono',monospace;letter-spacing:.4px}.dot{height:7px;width:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #c6f27670}.intro{padding:45px 0 29px;display:flex;justify-content:space-between;align-items:end}.eyebrow{font:11px 'DM Mono',monospace;letter-spacing:2px;color:var(--green);text-transform:uppercase}.intro h1{font:600 clamp(32px,4vw,47px) Manrope,sans-serif;letter-spacing:-2px;margin:11px 0 9px}.intro p{margin:0;color:var(--muted);font-size:14px}.session-tag{padding:9px 12px;border:1px solid var(--line);border-radius:8px;color:#aab7af;font:10px 'DM Mono',monospace;letter-spacing:.7px;white-space:nowrap}.grid{display:grid;grid-template-columns:minmax(0,1.62fr) minmax(320px,.92fr);gap:18px}.card{background:linear-gradient(145deg,#1a2320,#151d1b);border:1px solid var(--line);border-radius:16px;overflow:hidden}.card-head{height:61px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff0d}.card-title{display:flex;align-items:center;gap:9px;font:600 12px Manrope,sans-serif}.icon{color:var(--green);width:16px;height:16px}.live-pill{display:flex;align-items:center;gap:7px;border:1px solid #ffffff12;border-radius:30px;padding:6px 9px;font:9px 'DM Mono',monospace;color:var(--muted);letter-spacing:.7px}.camera-area{position:relative;min-height:360px;aspect-ratio:16/9;background:#0b100f;overflow:hidden}.camera-area video,.camera-area canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.camera-area canvas{z-index:1}.placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:17px;background:radial-gradient(ellipse at center,#202d283d 0,transparent 65%)}.face-outline{width:120px;height:148px;border:1px solid #c6f2766b;border-radius:48% 48% 46% 46%;position:relative;opacity:.65}.face-outline:before,.face-outline:after{content:'';position:absolute;width:30px;height:9px;border-top:1px solid var(--green);top:59px;left:18px;border-radius:50%}.face-outline:after{left:auto;right:18px}.face-mouth{position:absolute;width:34px;height:10px;border-bottom:1px solid var(--green);border-radius:50%;left:42px;top:97px}.placeholder span{font-size:12px;color:#9eaaa3}.camera-corner{position:absolute;z-index:2;width:23px;height:23px;border-color:#c6f27688;border-style:solid;pointer-events:none}.tl{top:16px;left:16px;border-width:1px 0 0 1px}.tr{top:16px;right:16px;border-width:1px 1px 0 0}.bl{bottom:16px;left:16px;border-width:0 0 1px 1px}.br{bottom:16px;right:16px;border-width:0 1px 1px 0}.camera-foot{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid #ffffff0d}.camera-note{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.camera-note svg{width:15px;color:var(--mint)}.controls{display:flex;gap:8px;flex-wrap:wrap}.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:11px;font-weight:600;cursor:pointer;transition:transform .15s,background .15s}.btn:hover{transform:translateY(-1px)}.btn-primary{color:#182015;background:var(--green);border-color:var(--green)}.btn-primary:hover{background:#d3fa90}.btn-secondary{background:#222b28}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.btn svg{width:15px;height:15px}.side{display:flex;flex-direction:column;gap:18px}.result{padding:20px 20px 18px}.result-top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font:10px 'DM Mono',monospace;letter-spacing:.7px}.result-display{display:flex;align-items:center;gap:14px;margin:21px 0 17px}.emoji{height:55px;width:55px;border:1px solid #c6f27630;background:#c6f2760b;border-radius:15px;display:grid;place-items:center;font-size:28px}.result-name{font:700 27px Manrope,sans-serif;letter-spacing:-1px}.result-caption{font-size:11px;color:var(--muted);margin-top:3px}.message{background:#c6f2760a;border:1px solid #c6f27621;border-radius:10px;padding:13px 14px;color:#d4dfd3;font-size:12px;line-height:1.55}.message b{color:var(--green);font-weight:600}.confidence{margin-top:17px}.conf-head{display:flex;justify-content:space-between;font:10px 'DM Mono',monospace;color:var(--muted);margin-bottom:8px}.bar{height:4px;background:#ffffff12;border-radius:5px;overflow:hidden}.bar span{display:block;width:0;height:100%;background:var(--green);border-radius:5px;transition:width .35s}.result-quiet{margin:10px 0 0;color:#87958e;font-size:10px;line-height:1.55}.distribution{padding:0 20px 17px}.distribution-head{height:52px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff0c;margin-bottom:8px}.distribution-head strong{font:600 12px Manrope}.distribution-head span{font:9px 'DM Mono',monospace;color:var(--muted)}.emotion-row{display:grid;grid-template-columns:22px 1fr 35px;gap:8px;align-items:center;padding:7px 0;font-size:10px;color:#bbc5bd}.emotion-row .mini{height:3px;background:#ffffff10;border-radius:3px;overflow:hidden}.emotion-row .mini i{display:block;width:0;height:100%;background:#78ae92;transition:width .3s}.emotion-row.active{color:var(--green)}.emotion-row.active .mini i{background:var(--green)}.emotion-row .pct{text-align:right;color:#87958e;font:9px 'DM Mono',monospace}.bottom-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;margin-top:18px}.info-card{display:flex;gap:12px;align-items:flex-start;background:#171f1d;border:1px solid var(--line);border-radius:12px;padding:16px}.info-icon{width:29px;height:29px;flex:0 0 auto;border-radius:8px;background:#c6f27612;color:var(--green);display:grid;place-items:center}.info-icon svg{width:15px;height:15px}.info-card strong{display:block;font:600 11px Manrope;margin:0 0 5px}.info-card p{margin:0;color:var(--muted);font-size:10px;line-height:1.5}.footer{display:flex;justify-content:space-between;align-items:center;margin-top:22px;color:#64726b;font:9px 'DM Mono',monospace;letter-spacing:.4px}.footer a{color:#91a097;text-decoration:none}.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#202a26;border:1px solid #36433d;color:#e2e9e1;border-radius:10px;padding:12px 16px;font-size:12px;transition:.2s;z-index:5}.toast.show{opacity:1;transform:translate(-50%,0)}
-    @media(max-width:900px){.shell{padding:0 22px 35px}.grid{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr;align-items:start}.result{grid-row:span 2}.camera-area{min-height:300px}.bottom-grid{grid-template-columns:1fr 1fr}.bottom-grid .info-card:first-child{grid-column:span 2}}
-    @media(max-width:600px){.shell{padding:0 14px 25px}.topbar{height:68px}.top-meta{font-size:9px}.intro{padding:31px 0 21px;align-items:start}.intro h1{font-size:34px}.intro p{font-size:12px;max-width:250px;line-height:1.5}.session-tag{display:none}.grid{gap:12px}.camera-area{min-height:235px}.camera-foot{align-items:flex-start;gap:12px;flex-direction:column}.controls{width:100%}.controls .btn{flex:1}.side{display:flex}.result{order:0}.distribution{order:1}.bottom-grid{grid-template-columns:1fr}.bottom-grid .info-card:first-child{grid-column:auto}.footer{gap:10px;align-items:flex-start;flex-direction:column}.result-name{font-size:24px}}
+    /* Variables base: Modo Claro (Calma Vital) */
+    :root {
+      color-scheme: light;
+      --bg-white: #ffffff;
+      --bg-body: #fdfbf9;
+      --brown-dark: #3a271d;
+      --brown-bar: #4e3629;
+      --brown-primary: #5c4033;
+      --brown-hover: #442f25;
+      --brown-light: #f5eee8;
+      --green-whatsapp: #25d366;
+      --text-main: #2c221e;
+      --text-muted: #6e5e56;
+      --border-color: #e8dfd7;
+      --glow-soft: rgba(92, 64, 51, 0.12);
+
+      --bg: var(--bg-body);
+      --panel: var(--bg-white);
+      --panel2: var(--brown-light);
+      --line: var(--border-color);
+      --muted: var(--text-muted);
+      --white: var(--text-main);
+      --green: var(--brown-primary);
+      --green2: var(--brown-hover);
+      --mint: var(--text-muted);
+      --amber: #b8860b;
+      --card-bg-gradient: #ffffff;
+    }
+
+    /* Variables dinámicas para el Modo Oscuro combinable */
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg-white: #281d18;
+      --bg-body: #1c1410;
+      --brown-dark: #120c09;
+      --brown-bar: #2b1f1a;
+      --brown-primary: #d19a66;
+      --brown-hover: #e2ab77;
+      --brown-light: #33251f;
+      --text-main: #f7f3f0;
+      --text-muted: #a39288;
+      --border-color: #423129;
+      --glow-soft: rgba(209, 154, 102, 0.12);
+
+      --bg: #1c1410;
+      --panel: #281d18;
+      --panel2: #33251f;
+      --line: #423129;
+      --muted: #a39288;
+      --white: #f7f3f0;
+      --green: #d19a66;
+      --green2: #b88252;
+      --mint: #b09785;
+      --amber: #edbe75;
+      --card-bg-gradient: linear-gradient(145deg, #2b1f1a, #231814);
+    }
+
+    * { box-sizing: border-box; }
     
-    .logout-btn {
-      background: #222b28;
-      border: 1px solid var(--line);
-      color: var(--muted);
-      padding: 7px 12px;
-      border-radius: 8px;
-      font: 11px 'DM Mono', monospace;
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    button { font: inherit; color: inherit; }
+
+    .sticky-header-container {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      width: 100%;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .top-sub-bar {
+      background-color: var(--brown-dark);
+      padding: 8px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #e3d7cf;
+      font-size: 12.5px;
+    }
+    .top-sub-bar .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .top-sub-bar a {
+      color: #e3d7cf;
       text-decoration: none;
-      transition: 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .top-sub-bar a:hover { color: #ffffff; }
+
+    .btn-ws {
+      background: var(--green-whatsapp);
+      color: #ffffff !important;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 700 !important;
+    }
+
+    .main-header-bar {
+      background-color: var(--brown-bar);
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .brand-logo-svg {
+      width: 42px;
+      height: 42px;
+      color: #ffffff;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+    }
+    .brand-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-name {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .brand-subtext {
+      font-size: 11px;
+      color: #dcd0c9;
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .theme-toggle-btn, .logout-btn {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff !important;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    .logout-btn:hover {
-      background: #2b3834;
-      color: var(--white);
-      border-color: #3d4f49;
+    .theme-toggle-btn:hover, .logout-btn:hover {
+      background: #ffffff;
+      color: var(--brown-dark) !important;
     }
 
-    /* ESTILOS Y ANIMACIONES FLUIDAS PARA LA VENTANA MODAL Y EL EFECTO BORROSO (BACKDROP BLUR) */
+    .shell {
+      width: 100%;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 42px 48px;
+    }
+
+    .intro {
+      padding: 40px 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .eyebrow {
+      font: 700 11px 'DM Mono', monospace;
+      letter-spacing: 2px;
+      color: var(--brown-primary);
+      text-transform: uppercase;
+    }
+    .intro h1 {
+      font: 900 clamp(28px, 3.5vw, 42px) Manrope, sans-serif;
+      letter-spacing: -1px;
+      margin: 8px 0 8px;
+      color: var(--brown-dark);
+    }
+    [data-theme="dark"] .intro h1 { color: var(--white); }
+    .intro p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .session-tag {
+      padding: 8px 14px;
+      background: var(--brown-light);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--brown-primary);
+      font: 700 10px 'DM Mono', monospace;
+      letter-spacing: .7px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1.1fr);
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--bg-white);
+      border: 1.5px solid var(--border-color);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(78, 54, 41, 0.04);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    .card-head {
+      height: 61px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--brown-light);
+    }
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font: 800 13px Manrope, sans-serif;
+      color: var(--brown-primary);
+    }
+    .icon {
+      color: var(--brown-primary);
+      width: 16px;
+      height: 16px;
+    }
+    .live-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-white);
+      border-radius: 30px;
+      padding: 6px 12px;
+      font: 700 9px 'DM Mono', monospace;
+      color: var(--brown-primary);
+      letter-spacing: .7px;
+    }
+    .dot {
+      height: 7px;
+      width: 7px;
+      border-radius: 50%;
+      background: var(--brown-primary);
+      box-shadow: 0 0 8px var(--glow-soft);
+    }
+
+    .camera-area {
+      position: relative;
+      min-height: 360px;
+      aspect-ratio: 16/9;
+      background: #120e0c;
+      overflow: hidden;
+    }
+    .camera-area video, .camera-area canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .camera-area canvas { z-index: 1; }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 17px;
+      background: radial-gradient(ellipse at center, rgba(92,64,51,0.08) 0, transparent 65%);
+    }
+    .face-outline {
+      width: 120px;
+      height: 148px;
+      border: 2px dashed rgba(92, 64, 51, 0.5);
+      border-radius: 48% 48% 46% 46%;
+      position: relative;
+      opacity: .8;
+    }
+    .face-outline:before, .face-outline:after {
+      content: '';
+      position: absolute;
+      width: 30px;
+      height: 9px;
+      border-top: 2px solid var(--brown-primary);
+      top: 59px;
+      left: 18px;
+      border-radius: 50%;
+    }
+    .face-outline:after { left: auto; right: 18px; }
+    .face-mouth {
+      position: absolute;
+      width: 34px;
+      height: 10px;
+      border-bottom: 2px solid var(--brown-primary);
+      border-radius: 50%;
+      left: 42px;
+      top: 97px;
+    }
+    .placeholder span { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+    .camera-corner {
+      position: absolute;
+      z-index: 2;
+      width: 23px;
+      height: 23px;
+      border-color: var(--brown-primary);
+      border-style: solid;
+      pointer-events: none;
+    }
+    .tl { top: 16px; left: 16px; border-width: 2px 0 0 2px; }
+    .tr { top: 16px; right: 16px; border-width: 2px 2px 0 0; }
+    .bl { bottom: 16px; left: 16px; border-width: 0 0 2px 2px; }
+    .br { bottom: 16px; right: 16px; border-width: 0 2px 2px 0; }
+
+    .camera-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-color);
+      background: var(--brown-light);
+    }
+    .camera-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .camera-note svg { width: 15px; color: var(--brown-primary); }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--brown-primary), var(--brown-dark));
+      border-color: transparent;
+      box-shadow: 0 4px 12px var(--glow-soft);
+    }
+    .btn-primary:hover { background: var(--brown-hover); }
+    .btn-secondary {
+      background: var(--brown-light);
+      color: var(--brown-primary);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover { opacity: 0.9; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn svg { width: 15px; height: 15px; }
+
+    .btn-pdf {
+      background: linear-gradient(135deg, #b8860b, #8b6508);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      margin-top: 12px;
+      box-shadow: 0 4px 15px rgba(184, 134, 11, 0.25);
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn-pdf:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(184, 134, 11, 0.4);
+    }
+
+    .side { display: flex; flex-direction: column; gap: 20px; }
+    .result { padding: 22px; }
+    .result-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font: 700 10px 'DM Mono', monospace;
+      letter-spacing: .7px;
+    }
+    .result-display { display: flex; align-items: center; gap: 14px; margin: 18px 0; }
+    .emoji {
+      height: 56px;
+      width: 56px;
+      border: 1.5px solid var(--border-color);
+      background: var(--brown-light);
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+    }
+    .result-name { font: 900 24px Manrope, sans-serif; letter-spacing: -0.5px; color: var(--text-main); }
+    .result-caption { font-size: 12px; color: var(--text-muted); margin-top: 3px; font-weight: 500; }
+
+    .message {
+      background: var(--brown-light);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text-main);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+    .message b { color: var(--brown-primary); font-weight: 800; }
+
+    .confidence { margin-top: 18px; }
+    .conf-head {
+      display: flex;
+      justify-content: space-between;
+      font: 700 10px 'DM Mono', monospace;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .bar { height: 6px; background: var(--border-color); border-radius: 5px; overflow: hidden; }
+    .bar span { display: block; width: 0; height: 100%; background: var(--brown-primary); border-radius: 5px; transition: width .35s; }
+    .result-quiet { margin: 12px 0 0; color: var(--text-muted); font-size: 11px; line-height: 1.5; opacity: 0.8; }
+
+    .distribution { padding: 0 22px 18px; }
+    .distribution-head {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 10px;
+    }
+    .distribution-head strong { font: 800 13px Manrope; color: var(--brown-primary); }
+    .distribution-head span { font: 700 9px 'DM Mono', monospace; color: var(--text-muted); }
+
+    .bottom-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 0; }
+    .info-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--bg-white);
+      border: 1.5px solid var(--border-color);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 4px 15px rgba(78, 54, 41, 0.03);
+    }
+    .info-icon {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      border-radius: 10px;
+      background: var(--brown-light);
+      color: var(--brown-primary);
+      display: grid;
+      place-items: center;
+    }
+    .info-icon svg { width: 16px; height: 16px; }
+    .info-card strong { display: block; font: 800 12px Manrope; margin: 0 0 4px; color: var(--brown-primary); }
+    .info-card p { margin: 0; color: var(--text-muted); font-size: 11.5px; line-height: 1.5; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+      color: var(--text-muted);
+      font: 700 10px 'DM Mono', monospace;
+      letter-spacing: .4px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+    .footer a { color: var(--brown-primary); text-decoration: none; font-weight: 800; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      background: var(--brown-dark);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 12.5px;
+      font-weight: 600;
+      transition: .2s;
+      z-index: 5000;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media(max-width:900px){
+      .shell { padding: 0 20px 35px; }
+      .grid { grid-template-columns: 1fr; }
+      .side { display: grid; grid-template-columns: 1fr; align-items: start; }
+      .main-header-bar { padding: 14px 20px; }
+      .top-sub-bar { flex-direction: column; gap: 8px; text-align: center; padding: 8px 15px; }
+    }
+
     dialog#captureModal {
-      background: rgba(21, 29, 27, 0.92);
+      background: var(--bg-white);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      color: var(--white);
-      border: 1px solid rgba(198, 242, 118, 0.2);
-      border-radius: 18px;
-      padding: 24px;
+      color: var(--text-main);
+      border: 1.5px solid var(--border-color);
+      border-radius: 22px;
+      padding: 26px;
       width: 100%;
       max-width: 680px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(78, 54, 41, 0.25);
       opacity: 0;
       transform: scale(0.95) translateY(10px);
-      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.3s allow-discrete, display 0.3s allow-discrete;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
-    dialog#captureModal[open] {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-
-    /* Fondo difuminado nativo del modal (backdrop) */
+    dialog#captureModal[open] { opacity: 1; transform: scale(1) translateY(0); }
     dialog#captureModal::backdrop {
-      background: rgba(10, 15, 14, 0.65);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(42, 31, 25, 0.6);
+      backdrop-filter: blur(6px);
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-
-    dialog#captureModal[open]::backdrop {
-      opacity: 1;
-    }
+    dialog#captureModal[open]::backdrop { opacity: 1; }
   </style>
 </head>
-<body>
-  <main class="shell">
-    <header class="topbar">
-      <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/><path d="M12 2v1.5M21 12h1.5M12 20.5V22M1.5 12H3"/></svg></div><div>mirada<small>LABORATORIO DE EXPRESIONES</small></div></div>
+<body data-theme="light">
+
+  <!-- ENCABEZADO STICKY DE CALMA VITAL -->
+  <header class="sticky-header-container">
+    <div class="top-sub-bar">
+      <span>Centro de Psiquiatría Clínica, Medicina & Psicoterapia</span>
+      <div class="nav-links">
+        <a href="https://wa.me/" target="_blank" class="btn-ws">💬 WhatsApp</a>
+        <a href="#contacto">📞 Contacto</a>
+      </div>
+    </div>
+    
+    <div class="main-header-bar">
+      <div class="brand-container">
+        <!-- Icono de ojo de Calma Vital -->
+        <svg class="brand-logo-svg" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 30 C 25 10, 75 10, 90 30 C 75 50, 25 50, 10 30 Z" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="50" cy="30" r="13" fill="currentColor"/>
+          <circle cx="45" cy="25" r="4" fill="#ffffff"/>
+        </svg>
+        <div class="brand-info">
+          <span class="brand-name">CALMA VITAL</span>
+          <span class="brand-subtext">Centro de Psiquiatría Clínica, Medicina &amp; Psicoterapia</span>
+        </div>
+      </div>
       
-      <div style="display: flex; align-items: center; gap: 16px;">
-        <div class="top-meta"><span class="dot"></span><span>IA EN TU NAVEGADOR</span></div>
+      <div class="header-actions">
+        <div class="top-meta" style="display: flex; align-items: center; gap: 8px; color: #dcd0c9; font: 11px 'DM Mono', monospace;">
+          <span class="dot" style="background:#25d366;"></span><span>IA EN TU NAVEGADOR</span>
+        </div>
+        
+        <!-- Botón para alternar Modo Claro / Modo Oscuro -->
+        <button class="theme-toggle-btn" id="themeToggleBtn" title="Cambiar modo claro / oscuro">
+          🌙 <span id="themeLabel">Oscuro</span>
+        </button>
+
+        <!-- Botón de cierre de sesión -->
         <a href="/api/logout" class="logout-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          Cerrar sesión
+          Salir
         </a>
       </div>
-    </header>
-    
+    </div>
+  </header>
+
+  <main class="shell">
     <section class="intro">
       <div>
-        <div class="eyebrow">Un vistazo al lenguaje facial</div>
-        <h1>¿Qué expresa tu rostro?</h1>
-        <p>Una exploración visual con inteligencia artificial, en tiempo real.</p>
+        <div class="eyebrow">Evaluación clínica y emocional</div>
+        <h1>¿Qué expresa tu rostro hoy?</h1>
+        <p>Una exploración visual avanzada asistida por inteligencia artificial en tiempo real.</p>
       </div>
-      <div class="session-tag">SESIÓN PRIVADA · SIN GRABACIÓN</div>
+      <div class="session-tag">SESIÓN PRIVADA · SEGURIDAD CLÍNICA</div>
     </section>
 
     <section class="grid">
-      <!-- Columna Izquierda: Cámara + Tarjetas informativas + Registros Faciales + Nuevos Paneles -->
-      <div style="display: flex; flex-direction: column; gap: 18px;">
+      <!-- COLUMNA IZQUIERDA -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
         <article class="card">
           <div class="card-head">
             <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg>Vista de cámara</div>
-            <div class="live-pill"><span class="dot" id="liveDot" style="background:#66756c;box-shadow:none"></span><span id="liveLabel">EN ESPERA</span></div>
+            <div class="live-pill"><span class="dot" id="liveDot" style="background:#b0998b;box-shadow:none"></span><span id="liveLabel">EN ESPERA</span></div>
           </div>
           <div class="camera-area" id="cameraArea">
             <video id="video" autoplay muted playsinline></video>
@@ -111,12 +654,11 @@
             <i class="camera-corner tl"></i><i class="camera-corner tr"></i><i class="camera-corner bl"></i><i class="camera-corner br"></i>
           </div>
           <div class="camera-foot">
-            <div class="camera-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>El análisis ocurre localmente en este dispositivo</div>
+            <div class="camera-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>El análisis ocurre de forma local y privada</div>
             <div class="controls">
               <button class="btn btn-primary" id="startBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 5 12 7-12 7V5Z"/></svg>Iniciar cámara</button>
               <button class="btn btn-secondary" id="stopBtn" disabled><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Detener</button>
-              <!-- Botón de Capturar Rostro integrado -->
-              <button class="btn btn-secondary" id="captureBtn" disabled style="border-color: rgba(198,242,118,0.4); color: var(--green);">
+              <button class="btn btn-secondary" id="captureBtn" disabled style="border-color: var(--brown-primary); color: var(--brown-primary);">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 Capturar rostro
               </button>
@@ -124,62 +666,74 @@
           </div>
         </article>
 
-        <!-- Las 3 tarjetas informativas -->
-        <div class="bottom-grid" style="margin-top: 0;">
-          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="M9 12h6"/></svg></div><div><strong>Tu privacidad primero</strong><p>La imagen se analiza dentro de tu navegador. No se envía ni se almacena.</p></div></article>
-          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div><strong>Una estimación, no una verdad</strong><p>El modelo clasifica patrones visuales. No puede saber con certeza cómo te sientes.</p></div></article>
-          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h17M7 15l4-4 3 2 6-7"/></svg></div><div><strong>Aprendizaje automático</strong><p>Red neuronal preentrenada para reconocer siete categorías de expresión.</p></div></article>
-        </div>
-
-        <!-- SECCIÓN DE REGISTROS FACIALES (HISTORIAL EN VIVO) -->
-        <article class="card" style="padding: 16px 20px; background: linear-gradient(145deg, #171f1d, #141a18);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
-            <strong style="font: 600 12px Manrope; display: flex; align-items: center; gap: 6px; color: var(--green);">📋 Registros Faciales (Historial)</strong>
-            <button id="clearLogsBtn" style="background: #222b28; border: 1px solid var(--line); color: var(--muted); padding: 3px 8px; border-radius: 4px; font: 9px 'DM Mono', monospace; cursor: pointer;">Limpiar</button>
+        <!-- TARJETA DE ANÁLISIS ESTADÍSTICO DE SESIÓN -->
+        <article class="card" style="padding: 22px;">
+          <div class="distribution-head" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+            <strong>Análisis Estadístico de Sesión</strong>
+            <span style="color: var(--brown-primary); background: var(--brown-light); padding: 4px 10px; border-radius: 6px; font-weight: 800;">IA + MÉTRICAS</span>
           </div>
-          <div id="facialLogsContainer" style="max-height: 140px; overflow-y: auto; font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
-            <div style="font-style: italic; opacity: 0.7;">Aún no hay registros en esta sesión. Inicia la cámara...</div>
-          </div>
-        </article>
-
-        <!-- NUEVO PANEL 1: TRANSICIÓN EMOCIONAL (INTERACTIVO) -->
-        <article class="card" style="padding: 16px 20px; background: linear-gradient(145deg, #171f1d, #141a18);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
-            <strong style="font: 600 12px Manrope; display: flex; align-items: center; gap: 6px; color: var(--green);">📈 Transición Emocional</strong>
-            <span style="font: 9px 'DM Mono', monospace; color: var(--mint); background: rgba(110,170,145,0.1); padding: 2px 6px; border-radius: 4px;">EN VIVO</span>
-          </div>
-          <p style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">
-            Secuencia reciente de cambios detectados. Haz clic para consultar el flujo temporal.
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+            Calcula la estabilidad emocional y genera un reporte predictivo basado en 15 segundos de muestreo continuo.
           </p>
-          <div id="timelineCardTrigger" style="background: rgba(0,0,0,0.25); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-size: 11px; color: var(--white); cursor: pointer; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--line)'">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--muted); font: 9px 'DM Mono', monospace;">
-              <span>FLUJO RECIENTE</span>
-              <span style="color: var(--green);">Ver detalles ➔</span>
+          
+          <button class="btn btn-primary" id="startSessionAnalysisBtn" style="width: 100%; margin-bottom: 14px; justify-content: center; font-weight: 800;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            Iniciar Análisis de Sesión (15s)
+          </button>
+
+          <!-- BOTÓN PARA DESCARGAR REPORTE PDF -->
+          <a href="/reporte-pdf" target="_blank" class="btn-pdf" id="downloadPdfBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Reporte PDF Clínico
+          </a>
+
+          <div id="sessionProgressContainer" style="display: none; margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; font: 700 10px 'DM Mono', monospace; color: var(--text-muted); margin-bottom: 6px;">
+              <span id="sessionStatusText">Muestreando fotogramas...</span>
+              <span id="sessionTimer" style="color: var(--brown-primary); font-weight: 800;">15s</span>
             </div>
-            <div style="margin-top: 6px; font-weight: 600; color: var(--green);" id="timelineCurrentSummary">Esperando flujo de cámara...</div>
+            <div class="bar"><span id="sessionBar" style="width: 100%; transition: width 1s linear;"></span></div>
+          </div>
+
+          <div id="sessionResultCard" style="display: none; background: var(--brown-light); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; border-left: 4px solid var(--brown-primary); margin-top: 14px; margin-bottom: 14px;">
+            <div style="font: 800 13px Manrope; color: var(--brown-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <span>📊</span> Reporte Estadístico Generado
+            </div>
+            <div style="font-size: 12px; color: var(--text-main); line-height: 1.6;" id="sessionReportText"></div>
           </div>
         </article>
 
-        <!-- NUEVO PANEL 2: CALIBRACIÓN Y SENSIBILIDAD -->
-        <article class="card" style="padding: 16px 20px; background: linear-gradient(145deg, #171f1d, #141a18);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
-            <strong style="font: 600 12px Manrope; display: flex; align-items: center; gap: 6px; color: var(--green);">⚙️ Calibración & Sensibilidad</strong>
-            <span style="font: 9px 'DM Mono', monospace; color: var(--amber); background: rgba(237,190,117,0.1); padding: 2px 6px; border-radius: 4px;">AJUSTES</span>
+        <!-- GRÁFICOS Y MÉTRICAS AVANZADAS -->
+        <article class="card" style="padding: 22px;">
+          <div class="distribution-head" style="margin-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+            <strong>Gráficos y Métricas Avanzadas de Sesión</strong>
+            <span style="color: var(--brown-primary); background: var(--brown-light); padding: 4px 10px; border-radius: 6px; font-weight: 800;">GRÁFICOS + TABLA</span>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);">
-              <span>Umbral mínimo de confianza:</span>
-              <span id="sensitivityValueLabel" style="font-family: 'DM Mono', monospace; color: var(--white); font-weight: bold;">50%</span>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+            Visualiza los gráficos de barras, evolución temporal y la tabla completa de estadística descriptiva al finalizar tu análisis.
+          </p>
+
+          <div id="sessionCharts" style="display:none; margin-bottom:14px;">
+            <div style="background:var(--bg-body); border:1px solid var(--border-color); border-radius:12px; padding:14px; margin-bottom:12px;">
+              <strong style="display:block; font-size:12.5px; color:var(--text-main); margin-bottom:4px;">📊 Media por expresión</strong>
+              <p style="font-size:11px; color:var(--text-muted); margin:0 0 10px;">Comparación del promedio de puntuaciones detectadas (0–100%).</p>
+              <canvas id="meanEmotionChart" style="display:block;width:100%;height:240px;"></canvas>
             </div>
-            <input type="range" id="sensitivityRange" min="10" max="90" value="50" style="accent-color: var(--green); cursor: pointer; width: 100%;">
-            <p style="font-size: 10px; color: #87958e; margin: 2px 0 0 0; line-height: 1.4;">
-              Filtra expresiones secundarias con baja probabilidad para lectura más estable.
-            </p>
+            <div style="background:var(--bg-body); border:1px solid var(--border-color); border-radius:12px; padding:14px;">
+              <strong style="display:block; font-size:12.5px; color:var(--text-main); margin-bottom:4px;">📈 Evolución durante la sesión</strong>
+              <p style="font-size:11px; color:var(--text-muted); margin:0 0 10px;">Puntuaciones por fotograma de las dos expresiones con mayor media.</p>
+              <canvas id="emotionEvolutionChart" style="display:block;width:100%;height:200px;"></canvas>
+              <div id="emotionChartLegend" style="display:flex;flex-wrap:wrap;gap:10px;color:var(--text-muted);font-size:11px;margin-top:8px;"></div>
+            </div>
+          </div>
+
+          <div id="basicStatsOutput" style="font-size: 12px; color: var(--text-muted); line-height: 1.6;">
+            Ejecuta «Iniciar Análisis de Sesión (15s)» arriba para desplegar aquí los gráficos detallados y la tabla de métricas estadísticas.
           </div>
         </article>
       </div>
 
-      <!-- Columna Derecha: Panel de Resultados, Distribución y Análisis Estadístico -->
+      <!-- COLUMNA DERECHA -->
       <div class="side">
         <article class="card result">
           <div class="result-top"><span>LECTURA ACTUAL</span><span id="confidenceTag">—</span></div>
@@ -195,7 +749,7 @@
             <div class="conf-head"><span>CONFIANZA DEL MODELO</span><span id="confidenceValue">—</span></div>
             <div class="bar"><span id="confidenceBar"></span></div>
           </div>
-          <p class="result-quiet">La confianza representa la salida del modelo, no la certeza sobre lo que una persona siente.</p>
+          <p class="result-quiet">La confianza representa la salida del modelo, no un juicio absoluto sobre el estado emocional.</p>
         </article>
 
         <article class="card distribution">
@@ -203,100 +757,157 @@
           <div id="emotionList"></div>
         </article>
 
-        <!-- TARJETA DE ANÁLISIS ESTADÍSTICO DE SESIÓN -->
-        <article class="card" style="padding: 20px; background: linear-gradient(145deg, #1d2824, #151d1b); border: 1px solid rgba(198, 242, 118, 0.22);">
-          <div class="distribution-head" style="margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <strong>Análisis Estadístico</strong>
-            <span style="color: var(--green); background: rgba(198, 242, 118, 0.1); padding: 3px 8px; border-radius: 4px; font-weight: bold;">IA + MÉTRICAS</span>
+        <article class="card" style="padding: 18px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <strong style="font: 800 12.5px Manrope; display: flex; align-items: center; gap: 6px; color: var(--brown-primary);">📋 Registros Faciales (Historial)</strong>
+            <button id="clearLogsBtn" style="background: var(--brown-light); border: 1px solid var(--border-color); color: var(--brown-primary); padding: 4px 10px; border-radius: 6px; font: 700 9px 'DM Mono', monospace; cursor: pointer;">Limpiar</button>
           </div>
-          <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5;">
-            Calcula la estabilidad emocional y genera un reporte predictivo basado en 15 segundos de muestreo continuo.
-          </p>
-          
-          <button class="btn btn-primary" id="startSessionAnalysisBtn" style="width: 100%; margin-bottom: 14px; justify-content: center; font-weight: bold;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            Iniciar Análisis de Sesión (15s)
-          </button>
-
-          <div id="sessionProgressContainer" style="display: none; margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; font: 10px 'DM Mono', monospace; color: var(--muted); margin-bottom: 6px;">
-              <span id="sessionStatusText">Muestreando fotogramas...</span>
-              <span id="sessionTimer" style="color: var(--green); font-weight: bold;">15s</span>
-            </div>
-            <div class="bar"><span id="sessionBar" style="width: 100%; transition: width 1s linear;"></span></div>
-          </div>
-
-          <div id="sessionResultCard" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(198, 242, 118, 0.3); border-radius: 10px; padding: 14px; border-left: 4px solid var(--green);">
-            <div style="font: 600 12px Manrope; color: var(--green); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <span>📊</span> Reporte Estadístico Generado
-            </div>
-            <div style="font-size: 11px; color: var(--white); line-height: 1.6;" id="sessionReportText"></div>
+          <div id="facialLogsContainer" style="max-height: 140px; overflow-y: auto; font-size: 11.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+            <div style="font-style: italic; opacity: 0.7;">Aún no hay registros en esta sesión. Inicia la cámara...</div>
           </div>
         </article>
 
-        <!-- Tarjeta de sesión con correo actual (Gmail vinculado) -->
-        <article class="card" style="padding: 14px 18px; display: flex; align-items: center; gap: 12px; background: #151d1b;">
-          <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--green); color: #1a2714; display: grid; place-items: center; font-weight: bold; font-size: 14px;">
+        <article class="card" style="padding: 18px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <strong style="font: 800 12.5px Manrope; display: flex; align-items: center; gap: 6px; color: var(--brown-primary);">📈 Transición Emocional</strong>
+            <span style="font: 700 9px 'DM Mono', monospace; color: var(--brown-primary); background: var(--brown-light); padding: 2px 8px; border-radius: 6px;">EN VIVO</span>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+            Secuencia reciente de cambios detectados. Haz clic para consultar el flujo temporal.
+          </p>
+          <div id="timelineCardTrigger" style="background: var(--bg-body); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 12px; font-size: 11.5px; color: var(--text-main); cursor: pointer; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--brown-primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); font: 700 9px 'DM Mono', monospace;">
+              <span>FLUJO RECIENTE</span>
+              <span style="color: var(--brown-primary);">Ver detalles ➔</span>
+            </div>
+            <div style="margin-top: 6px; font-weight: 800; color: var(--brown-primary);" id="timelineCurrentSummary">Esperando flujo de cámara...</div>
+          </div>
+        </article>
+
+        <article class="card" style="padding: 18px 22px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <strong style="font: 800 12.5px Manrope; display: flex; align-items: center; gap: 6px; color: var(--brown-primary);">⚙️ Calibración & Sensibilidad</strong>
+            <span style="font: 700 9px 'DM Mono', monospace; color: var(--amber); background: rgba(184,134,11,0.1); padding: 2px 8px; border-radius: 6px;">AJUSTES</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+              <span>Umbral mínimo de confianza:</span>
+              <span id="sensitivityValueLabel" style="font-family: 'DM Mono', monospace; color: var(--text-main); font-weight: 800;">50%</span>
+            </div>
+            <input type="range" id="sensitivityRange" min="10" max="90" value="50" style="accent-color: var(--brown-primary); cursor: pointer; width: 100%;">
+            <p style="font-size: 11px; color: var(--text-muted); margin: 0; line-height: 1.4;">
+              Filtra expresiones secundarias con baja probabilidad para una lectura más estable.
+            </p>
+          </div>
+        </article>
+
+        <!-- TARJETAS INFORMATIVAS -->
+        <div class="bottom-grid">
+          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="M9 12h6"/></svg></div><div><strong>Tu privacidad primero</strong><p>La imagen se analiza dentro de tu navegador. No se envía ni se almacena externamente.</p></div></article>
+          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg></div><div><strong>Una estimación clínica</strong><p>El modelo clasifica patrones visuales de acuerdo con expresiones faciales estándar.</p></div></article>
+          <article class="info-card"><div class="info-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h17M7 15l4-4 3 2 6-7"/></svg></div><div><strong>Aprendizaje automático</strong><p>Red neuronal entrenada para reconocer categorías gestuales en tiempo real.</p></div></article>
+        </div>
+
+        <article class="card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px; background: var(--bg-white);">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--brown-light); color: var(--brown-primary); display: grid; place-items: center; font-weight: bold; font-size: 14px;">
             👤
           </div>
           <div style="overflow: hidden; flex: 1;">
-            <div style="font: 9px 'DM Mono', monospace; color: var(--muted); letter-spacing: 0.5px;">CONECTADO COMO</div>
-            <div style="font-size: 12px; font-weight: 600; color: var(--white); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" id="userEmailDisplay">cesar.villanueva@... / Sesión Activa</div>
+            <div style="font: 700 9px 'DM Mono', monospace; color: var(--text-muted); letter-spacing: 0.5px;">CONECTADO COMO</div>
+            <div style="font-size: 12.5px; font-weight: 700; color: var(--text-main); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" id="userEmailDisplay">{{ user_email }} / Sesión Activa</div>
           </div>
         </article>
       </div>
     </section>
     
-    <footer class="footer"><span>MIRADA LAB · EXPLORACIÓN EDUCATIVA</span><span>Procesamiento local · Modelo TensorFlow.js</span></footer>
+    <footer class="footer">
+      <span>CALMA VITAL CLINICAL LAB · EXPLORACIÓN EDUCATIVA</span>
+      <span>Servidor Python · FER y FaceNet512</span>
+    </footer>
   </main>
   
-  <!-- VENTANA MODAL PARA CAPTURA DE ROSTRO (CON EFECTO BORROSO Y TRANSICIÓN FLUIDA) -->
   <dialog id="captureModal">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
       <div>
-        <div style="font: 9px 'DM Mono', monospace; color: var(--green); letter-spacing: 1px;">CAPTURA ANALIZADA</div>
-        <div style="font: 700 18px Manrope, sans-serif; margin-top: 2px;">Lectura de tu rostro</div>
+        <div style="font: 700 9px 'DM Mono', monospace; color: var(--brown-primary); letter-spacing: 1px;">CAPTURA ANALIZADA</div>
+        <div style="font: 800 18px Manrope, sans-serif; margin-top: 2px; color: var(--text-main);">Lectura de tu rostro</div>
       </div>
-      <button id="closeModalBtn" style="background: #222b28; border: 1px solid var(--line); color: var(--muted); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; font-size: 14px;">✕</button>
+      <button id="closeModalBtn" style="background: var(--brown-light); border: 1.5px solid var(--border-color); color: var(--brown-primary); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: grid; place-items: center; font-size: 14px; font-weight: bold;">✕</button>
     </div>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
-      <!-- Fotograma capturado -->
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div style="position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4/3; border: 1px solid var(--line);">
+        <div style="position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4/3; border: 1.5px solid var(--border-color);">
           <img id="modalFace" src="" alt="Fotograma capturado" style="width: 100%; height: 100%; object-fit: cover;">
         </div>
-        <span style="font: 9px 'DM Mono', monospace; color: var(--muted); text-align: center;">Fotograma capturado · solo para esta sesión</span>
+        <span style="font: 700 9px 'DM Mono', monospace; color: var(--text-muted); text-align: center;">Fotograma capturado · solo para esta sesión</span>
       </div>
 
-      <!-- Resultados en la Modal -->
       <div style="display: flex; flex-direction: column; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="display: flex; align-items: center; gap: 12px; background: var(--bg-body); padding: 12px; border-radius: 12px; border: 1.5px solid var(--border-color);">
           <div id="modalEmoji" style="font-size: 32px;">😊</div>
           <div>
-            <div id="modalEmotion" style="font: 700 18px Manrope, sans-serif;">Cargando...</div>
-            <div id="modalConfidence" style="font: 10px 'DM Mono', monospace; color: var(--muted);">Confianza del modelo: —</div>
+            <div id="modalEmotion" style="font: 800 16px Manrope, sans-serif; color: var(--text-main);">Cargando...</div>
+            <div id="modalConfidence" style="font: 700 10px 'DM Mono', monospace; color: var(--text-muted);">Confianza: —</div>
           </div>
         </div>
 
         <div>
-          <div style="display: flex; justify-content: space-between; font: 9px 'DM Mono', monospace; color: var(--muted); margin-bottom: 4px;">
+          <div style="display: flex; justify-content: space-between; font: 700 9px 'DM Mono', monospace; color: var(--text-muted); margin-bottom: 4px;">
             <span>Distribución estimada</span>
             <span>7 CATEGORÍAS</span>
           </div>
-          <div id="modalEmotionList" style="display: flex; flex-direction: column; gap: 4px;">
-            <!-- Se llena dinámicamente mediante JavaScript -->
-          </div>
+          <div id="modalEmotionList" style="display: flex; flex-direction: column; gap: 4px;"></div>
         </div>
       </div>
     </div>
 
-    <div id="modalMessage" style="margin-top: 16px; background: rgba(198,242,118,0.05); border: 1px solid rgba(198,242,118,0.15); border-radius: 8px; padding: 10px 12px; font-size: 11px; color: #d4dfd3; line-height: 1.4;">
+    <div id="modalMessage" style="margin-top: 16px; background: var(--brown-light); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; font-size: 12px; color: var(--text-main); line-height: 1.4;">
       Analizando los patrones del rostro capturado...
     </div>
+
+    <!-- SECCIÓN DE PARECIDO CON UN FAMOSO (Actualizada con soporte de imagen) -->
+    <section style="margin-top:12px;padding:14px;background:var(--bg-body);border:1.5px solid var(--border-color);border-radius:12px;">
+      <div style="font:800 12px Manrope,sans-serif;margin-bottom:6px;color:var(--brown-primary);">✨ Parecido con un famoso</div>
+      <div id="celebrityResult" style="font-size:12px;line-height:1.5;color:var(--text-main);">
+        La comparación se mostrará al capturar.
+      </div>
+      <div style="margin-top:7px;font-size:10px;line-height:1.45;color:var(--text-muted);">Es una comparación recreativa con las fotos de referencia disponibles.puede variar según la foto.</div>
+    </section>
   </dialog>
 
   <div class="toast" id="toast"></div>
+
+  <!-- SCRIPT PARA EL CAMBIO DE TEMA Y MANTENER LA CÁMARA / APP.JS INTACTOS -->
+  <script>
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeLabel = document.getElementById('themeLabel');
+    const bodyElement = document.body;
+
+    const currentTheme = localStorage.getItem('calma_vital_theme') || 'light';
+    bodyElement.setAttribute('data-theme', currentTheme);
+    updateThemeUI(currentTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const activeTheme = bodyElement.getAttribute('data-theme');
+      const newTheme = activeTheme === 'light' ? 'dark' : 'light';
+      
+      bodyElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('calma_vital_theme', newTheme);
+      updateThemeUI(newTheme);
+    });
+
+    function updateThemeUI(theme) {
+      if (theme === 'dark') {
+        themeLabel.innerText = 'Claro';
+        themeToggleBtn.innerHTML = '☀️ <span id="themeLabel">Claro</span>';
+      } else {
+        themeLabel.innerText = 'Oscuro';
+        themeToggleBtn.innerHTML = '🌙 <span id="themeLabel">Oscuro</span>';
+      }
+    }
+  </script>
+
   <script src="/static/app.js" defer></script>
 </body>
 </html>
