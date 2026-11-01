@@ -1,4 +1,4 @@
-"""Aplicación local de estimación de expresiones faciales con Login Facial y Supabase."""
+ """Aplicación local de estimación de expresiones faciales con Login Facial y Supabase."""
 
 from __future__ import annotations
 
@@ -462,68 +462,82 @@ def reporte_pdf():
 def compare_celebrity_lookalikes():
     if not session.get("authenticated") or session.get("is_admin"):
         return jsonify({"success": False, "message": "Inicia sesión como usuario para comparar la captura."}), 401
+    
     payload = request.get_json(silent=True) or {}
     image_data = payload.get("image", "")
     if not isinstance(image_data, str) or "," not in image_data:
         return jsonify({"success": False, "message": "No se recibió una captura válida."}), 400
+    
     try:
         raw = base64.b64decode(image_data.split(",", 1)[1], validate=True)
         image = cv2.imdecode(np.frombuffer(raw, dtype=np.uint8), cv2.IMREAD_COLOR)
     except (ValueError, binascii.Error):
         return jsonify({"success": False, "message": "La captura no se pudo leer."}), 400
+    
     if image is None or image.size == 0:
         return jsonify({"success": False, "message": "La captura no se pudo leer."}), 400
 
-    gallery = get_celebrity_embeddings()
-    if not gallery:
-        return jsonify({"success": False, "message": "Aún no hay fotos en celebrity_gallery. Consulta README.md para agregarlas."}), 404
-    try:
-        from deepface import DeepFace
+    gallery_dir = Path(app.root_path) / "celebrity_gallery"
+    files = sorted(
+        path for path in gallery_dir.glob("*")
+        if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
+    )
+    
+    if not files:
+        return jsonify({"success": False, "message": "Aún no hay fotos en celebrity_gallery."}), 404
 
-        embedded = DeepFace.represent(
-            img_path=image, model_name="Facenet512", detector_backend="opencv",
-            enforce_detection=True, align=True, max_faces=1,
-        )
-        if not embedded:
-            return jsonify({"success": False, "message": "No se encontró un rostro claro en la captura."}), 422
-        vector = np.asarray(embedded[0]["embedding"], dtype=np.float32)
-        norm = float(np.linalg.norm(vector))
-        if norm <= 0:
-            return jsonify({"success": False, "message": "No se pudo calcular la comparación."}), 422
-        vector /= norm
+    try:
+        # Procesar imagen del usuario en escala de grises e histograma (Ultraligero)
+        gray_user = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        hist_user = cv2.calcHist([gray_user], [0], None, [64], [0, 256])
+        cv2.normalize(hist_user, hist_user, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
 
         matches = []
-        gallery_dir = Path(app.root_path) / "celebrity_gallery"
+        grouped_sims = {}
 
-        for name, reference in gallery.items():
-            sim = round(max(0.0, min(1.0, float(np.dot(vector, reference)))) * 100, 1)
+        for path in files:
+            ref_img = cv2.imread(str(path))
+            if ref_img is None:
+                continue
             
-            # Buscar la imagen física del famoso para enviarla en base64
-            img_base64 = ""
-            for path in gallery_dir.glob("*"):
-                if path.is_file() and path.stem.split("__", 1)[0].replace("_", " ").strip().lower() == name.lower():
-                    try:
-                        with open(path, "rb") as image_file:
-                            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                            ext = path.suffix.lower().replace(".", "")
-                            if ext == "jpg":
-                                ext = "jpeg"
-                            img_base64 = f"data:image/{ext};base64,{encoded_string}"
-                        break
-                    except Exception:
-                        pass
+            name = path.stem.split("__", 1)[0].replace("_", " ").strip()
+            
+            gray_ref = cv2.cvtColor(ref_img, cv2.COLOR_BGR2GRAY)
+            hist_ref = cv2.calcHist([gray_ref], [0], None, [64], [0, 256])
+            cv2.normalize(hist_ref, hist_ref, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
+            
+            # Comparación de correlación de histogramas de OpenCV
+            sim_val = cv2.compareHist(hist_ref, hist_user, cv2.HISTCMP_CORREL)
+            sim = round(max(0.0, min(1.0, float(sim_val))) * 100, 1)
+            
+            # Si hay varias fotos del mismo famoso, nos quedamos con la mayor similitud
+            if name not in grouped_sims or sim > grouped_sims[name]["similarity"]:
+                # Convertir imagen del famoso a base64 para mostrarla en la interfaz
+                img_base64 = ""
+                try:
+                    with open(path, "rb") as image_file:
+                        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                        ext = path.suffix.lower().replace(".", "")
+                        if ext == "jpg":
+                            ext = "jpeg"
+                        img_base64 = f"data:image/{ext};base64,{encoded_string}"
+                except Exception:
+                    pass
 
-            matches.append({
-                "name": name,
-                "similarity": sim,
-                "image": img_base64
-            })
+                grouped_sims[name] = {
+                    "name": name,
+                    "similarity": sim,
+                    "image": img_base64
+                }
 
+        matches = list(grouped_sims.values())
         matches = sorted(matches, key=lambda item: item["similarity"], reverse=True)
+        
         return jsonify({"success": True, "matches": matches[:3]})
+        
     except Exception:
-        app.logger.exception("No se pudo comparar con la galería de famosos")
-        return jsonify({"success": False, "message": "No se pudo completar la comparación. Revisa las referencias y dependencias."}), 503
+        app.logger.exception("Error al comparar con la galería de famosos")
+        return jsonify({"success": False, "message": "No se pudo completar la comparación."}), 500
 
 
 # ==========================================
