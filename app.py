@@ -1,4 +1,4 @@
- """Aplicación local de estimación de expresiones faciales con Login Facial y Supabase."""
+"""Aplicación local de estimación de expresiones faciales con Login Facial y Supabase."""
 
 from __future__ import annotations
 
@@ -39,8 +39,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 _detector: FER | None = None
 _model_lock = threading.Lock()
 _detector_lock = threading.Lock()
-_celebrity_embeddings: dict[str, np.ndarray] | None = None
-_celebrity_gallery_lock = threading.Lock()
 
 
 def get_detector() -> FER:
@@ -50,53 +48,6 @@ def get_detector() -> FER:
             if _detector is None:
                 _detector = FER(mtcnn=False)
     return _detector
-
-
-def get_celebrity_embeddings() -> dict[str, np.ndarray]:
-    """Crea la galería de referencias en memoria; no persiste la captura ni sus vectores."""
-    global _celebrity_embeddings
-    if _celebrity_embeddings is not None:
-        return _celebrity_embeddings
-    with _celebrity_gallery_lock:
-        if _celebrity_embeddings is not None:
-            return _celebrity_embeddings
-        gallery_dir = Path(app.root_path) / "celebrity_gallery"
-        files = sorted(
-            path for path in gallery_dir.glob("*")
-            if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
-        )
-        if not files:
-            _celebrity_embeddings = {}
-            return _celebrity_embeddings
-
-        from deepface import DeepFace
-
-        grouped: dict[str, list[np.ndarray]] = {}
-        for path in files:
-            image = cv2.imread(str(path))
-            if image is None:
-                continue
-            name = path.stem.split("__", 1)[0].replace("_", " ").strip()
-            try:
-                embedded = DeepFace.represent(
-                    img_path=image, model_name="Facenet512", detector_backend="opencv",
-                    enforce_detection=True, align=True, max_faces=1,
-                )
-                if embedded:
-                    vector = np.asarray(embedded[0]["embedding"], dtype=np.float32)
-                    norm = float(np.linalg.norm(vector))
-                    if norm > 0:
-                        grouped.setdefault(name, []).append(vector / norm)
-            except Exception:
-                app.logger.warning("Se omite referencia facial no válida: %s", path.name, exc_info=True)
-
-        _celebrity_embeddings = {}
-        for name, vectors in grouped.items():
-            vector = np.mean(vectors, axis=0)
-            norm = float(np.linalg.norm(vector))
-            if norm > 0:
-                _celebrity_embeddings[name] = vector / norm
-        return _celebrity_embeddings
 
 
 @app.get("/")
@@ -487,12 +438,10 @@ def compare_celebrity_lookalikes():
         return jsonify({"success": False, "message": "Aún no hay fotos en celebrity_gallery."}), 404
 
     try:
-        # Procesar imagen del usuario en escala de grises e histograma (Ultraligero)
         gray_user = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         hist_user = cv2.calcHist([gray_user], [0], None, [64], [0, 256])
         cv2.normalize(hist_user, hist_user, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
 
-        matches = []
         grouped_sims = {}
 
         for path in files:
@@ -506,13 +455,10 @@ def compare_celebrity_lookalikes():
             hist_ref = cv2.calcHist([gray_ref], [0], None, [64], [0, 256])
             cv2.normalize(hist_ref, hist_ref, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
             
-            # Comparación de correlación de histogramas de OpenCV
             sim_val = cv2.compareHist(hist_ref, hist_user, cv2.HISTCMP_CORREL)
             sim = round(max(0.0, min(1.0, float(sim_val))) * 100, 1)
             
-            # Si hay varias fotos del mismo famoso, nos quedamos con la mayor similitud
             if name not in grouped_sims or sim > grouped_sims[name]["similarity"]:
-                # Convertir imagen del famoso a base64 para mostrarla en la interfaz
                 img_base64 = ""
                 try:
                     with open(path, "rb") as image_file:
@@ -589,10 +535,8 @@ def admin_analytics():
 
         df = pd.DataFrame(rows)
 
-        # 1. Lista de usuarios únicos
         all_users = df["user_email"].unique().tolist() if "user_email" in df.columns else []
 
-        # 2. Resumen por usuario y obtención de foto de perfil
         users_summary = []
         selected_user_photo = None
 
@@ -619,7 +563,6 @@ def admin_analytics():
                     "face_image_url": p_url
                 })
 
-        # 3. Estadísticas globales
         total_samples = len(df)
         unique_users_count = len(all_users)
         conf_series = df["confidence"] if "confidence" in df.columns else pd.Series([0])
@@ -638,7 +581,6 @@ def admin_analytics():
             counts = df["emotion"].value_counts(normalize=True).to_dict()
             mean_distribution = {str(k): float(v) for k, v in counts.items()}
 
-        # Diccionario de recomendaciones clínicas / IA según la emoción predominante
         recomendaciones_ia = {
             "happy": "El usuario presenta un patrón de alegría predominante. Recomendación de IA: Reforzar este estado positivo fomentando actividades de alta satisfacción personal, continuidad en sus rutinas saludables y validación de su alta autoestima y confianza actual.",
             "sad": "Se detecta un predominio de tristeza o fatiga anímica. Recomendación de IA: Se sugiere un espacio de escucha activa, pausas de descanso prolongadas, evitar la sobrecarga laboral y considerar una derivación preventiva para apoyo emocional.",
@@ -650,7 +592,6 @@ def admin_analytics():
         }
         ai_recommendation = recomendaciones_ia.get(dominant_emo.lower(), "Sin datos suficientes para emitir una recomendación automatizada de IA.")
 
-        # 4. Gráfico 1: Distribución (Seaborn) en Base64
         fig, ax = plt.subplots(figsize=(6, 3))
         if "emotion" in df.columns and not df["emotion"].empty:
             sns.countplot(data=df, x="emotion", ax=ax, palette="mako")
@@ -665,7 +606,6 @@ def admin_analytics():
         dist_b64 = base64.b64encode(buf1.getvalue()).decode("utf-8")
         plt.close(fig)
 
-        # 5. Gráfico 2: Tendencia de confianza (Matplotlib) en Base64
         fig, ax = plt.subplots(figsize=(6, 3))
         if "confidence" in df.columns:
             ax.plot(range(len(df)), df["confidence"].values, color="#567b66", linewidth=2, marker="o", markersize=3)
@@ -723,6 +663,5 @@ def too_large(_error):
 
 
 if __name__ == '__main__':
-    # Obtiene el puerto que asigna Render automáticamente (o usa el 5000 por defecto si estás en tu PC local)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
