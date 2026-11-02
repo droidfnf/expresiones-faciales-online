@@ -500,6 +500,13 @@ def admin_analytics():
     to_date = request.args.get("to")
 
     try:
+        # 1. OBTENEMOS TODOS LOS USUARIOS REGISTRADOS OFICIALMENTE EN LA TABLA 'users'
+        users_db_res = supabase.table("users").select("email, face_image_url").execute()
+        all_registered_users = users_db_res.data or []
+        photos_map = {u["email"]: u.get("face_image_url") for u in all_registered_users}
+        all_users = [u["email"] for u in all_registered_users]
+
+        # 2. CONSULTAMOS LOS LOGS FACIALES CON FILTROS
         query = supabase.table("facial_logs").select("*")
 
         if user_filter != "all":
@@ -512,72 +519,50 @@ def admin_analytics():
         response = query.order("recorded_at", desc=True).execute()
         rows = response.data if response and hasattr(response, "data") else []
 
-        if not rows:
-            return jsonify({
-                "users": [],
-                "users_summary": [],
-                "recent_events": [],
-                "selected_user_photo": None,
-                "ai_recommendation": "Sin datos suficientes para emitir una recomendación automatizada de IA.",
-                "stats": {
-                    "samples": 0, "users": 0, "mean_confidence": 0, 
-                    "dominant_emotion": "—", "dominant_share": 0, 
-                    "median_confidence": 0, "variance": 0, "std_dev": 0,
-                    "mean_distribution": {}
-                },
-                "simple_regression": {"available": False, "message": "Sin muestras suficientes en este filtro."},
-                "multiple_regression": {"available": False, "message": "Sin muestras suficientes en este filtro."},
-                "segments": [],
-                "report": "No hay suficientes datos registrados para generar un informe estadístico en este período.",
-                "charts": {"distribution": "", "trend": ""},
-                "truncated": False
-            })
-
-        df = pd.DataFrame(rows)
-
-        all_users = df["user_email"].unique().tolist() if "user_email" in df.columns else []
-
+        # Construimos el resumen de usuarios asegurando que aparezcan TODOS los registrados
         users_summary = []
-        selected_user_photo = None
+        selected_user_photo = photos_map.get(user_filter, None) if user_filter != "all" else None
 
-        if "user_email" in df.columns:
-            users_db_res = supabase.table("users").select("email, face_image_url").execute()
-            photos_map = {u["email"]: u.get("face_image_url") for u in (users_db_res.data or [])}
+        df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=["user_email", "emotion", "confidence", "recorded_at"])
 
-            grouped = df.groupby("user_email")
-            for email, group in grouped:
-                dominant = group["emotion"].mode()[0] if "emotion" in group.columns and not group["emotion"].empty else "—"
-                mean_conf = float(group["confidence"].mean()) if "confidence" in group.columns else 0.0
-                last_seen = group["recorded_at"].max() if "recorded_at" in group.columns else ""
-                p_url = photos_map.get(email, "")
+        for email in all_users:
+            user_group = df[df["user_email"] == email] if not df.empty and "user_email" in df.columns else pd.DataFrame()
+            
+            if not user_group.empty:
+                dominant = user_group["emotion"].mode()[0] if "emotion" in user_group.columns and not user_group["emotion"].empty else "—"
+                mean_conf = float(user_group["confidence"].mean()) if "confidence" in user_group.columns else 0.0
+                last_seen = user_group["recorded_at"].max() if "recorded_at" in user_group.columns else "Sin registros"
+                samples_count = len(user_group)
+            else:
+                dominant = "—"
+                mean_conf = 0.0
+                last_seen = "Sin actividad"
+                samples_count = 0
 
-                if user_filter == email:
-                    selected_user_photo = p_url
-
-                users_summary.append({
-                    "user_email": email,
-                    "samples": len(group),
-                    "dominant_emotion": dominant,
-                    "mean_confidence": mean_conf,
-                    "last_seen": last_seen,
-                    "face_image_url": p_url
-                })
+            users_summary.append({
+                "user_email": email,
+                "samples": samples_count,
+                "dominant_emotion": dominant,
+                "mean_confidence": mean_conf,
+                "last_seen": last_seen,
+                "face_image_url": photos_map.get(email, "")
+            })
 
         total_samples = len(df)
         unique_users_count = len(all_users)
-        conf_series = df["confidence"] if "confidence" in df.columns else pd.Series([0])
+        conf_series = df["confidence"] if not df.empty and "confidence" in df.columns else pd.Series([0])
         
         mean_conf = float(conf_series.mean())
         median_conf = float(conf_series.median())
         variance_conf = float(conf_series.var()) if len(conf_series) > 1 else 0.0
         std_conf = float(conf_series.std()) if len(conf_series) > 1 else 0.0
 
-        dominant_emo = df["emotion"].mode()[0] if "emotion" in df.columns and not df["emotion"].empty else "—"
-        dominant_count = len(df[df["emotion"] == dominant_emo]) if "emotion" in df.columns else 0
+        dominant_emo = df["emotion"].mode()[0] if not df.empty and "emotion" in df.columns and not df["emotion"].empty else "—"
+        dominant_count = len(df[df["emotion"] == dominant_emo]) if not df.empty and "emotion" in df.columns else 0
         dominant_share = dominant_count / total_samples if total_samples > 0 else 0.0
 
         mean_distribution = {}
-        if "emotion" in df.columns:
+        if not df.empty and "emotion" in df.columns:
             counts = df["emotion"].value_counts(normalize=True).to_dict()
             mean_distribution = {str(k): float(v) for k, v in counts.items()}
 
@@ -593,7 +578,7 @@ def admin_analytics():
         ai_recommendation = recomendaciones_ia.get(dominant_emo.lower(), "Sin datos suficientes para emitir una recomendación automatizada de IA.")
 
         fig, ax = plt.subplots(figsize=(6, 3))
-        if "emotion" in df.columns and not df["emotion"].empty:
+        if not df.empty and "emotion" in df.columns and not df["emotion"].empty:
             sns.countplot(data=df, x="emotion", ax=ax, palette="mako")
             ax.set_ylabel("Frecuencia")
             ax.set_xlabel("")
@@ -607,7 +592,7 @@ def admin_analytics():
         plt.close(fig)
 
         fig, ax = plt.subplots(figsize=(6, 3))
-        if "confidence" in df.columns:
+        if not df.empty and "confidence" in df.columns:
             ax.plot(range(len(df)), df["confidence"].values, color="#567b66", linewidth=2, marker="o", markersize=3)
             ax.set_title("Evolución temporal de confianza", fontsize=9, color="#2c2824")
             ax.set_ylabel("Confianza", fontsize=8)
@@ -627,7 +612,7 @@ def admin_analytics():
         return jsonify({
             "users": all_users,
             "users_summary": users_summary,
-            "recent_events": rows[:15],
+            "recent_events": rows[:15] if rows else [],
             "selected_user_photo": selected_user_photo,
             "ai_recommendation": ai_recommendation,
             "stats": {
